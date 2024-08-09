@@ -11,6 +11,7 @@ from pygame_gui import UIManager, UI_FILE_DIALOG_PATH_PICKED, UI_BUTTON_PRESSED,
     UI_SELECTION_LIST_NEW_SELECTION
 from pygame_gui.elements import UIWindow, UIPanel, UILabel, UIButton, UIDropDownMenu, UISelectionList
 from pygame_gui.windows import UIFileDialog
+from adj_image import adj_image
 
 
 class RightClick:
@@ -227,12 +228,17 @@ class AutoInspection:
     def show_rects_to_surface(self, frame_dict):
         for k, v in frame_dict.items():
             xywh = np.array(v.get('xywh'))
-            x1y1wh = xywh - np.array([xywh[2], xywh[3], 0, 0]) / 2
-            x1y1wh_ = x1y1wh * np.tile(self.img_size_vector, 2)
-            rect = Rect(x1y1wh_.astype(int).tolist())
+            xy = xywh[:2]
+            wh = xywh[2:]
+            x1y1 = xy - wh / 2
+            x1y1_ = x1y1 * self.img_size_vector
+            wh_ = wh * self.img_size_vector
+            rect = Rect(x1y1_, wh_)
+
             # pg.draw.line(self.scaled_img_surface, (255, 255, 0), rect.midtop, rect.midbottom)
             # pg.draw.line(self.scaled_img_surface, (255, 255, 0), rect.midleft, rect.midright)
-            pg.draw.rect(self.scaled_img_surface, (255, 255, 0), rect.inflate(7, 7), 3)
+            pg.draw.rect(self.scaled_img_surface, v['color_rect'],
+                         rect.inflate(v['width_rect'] * 2 + 1, v['width_rect'] * 2 + 1), v['width_rect'])
 
             # pg.draw.rect(self.scaled_img_surface, (200, 255, 0), rect, 1)
             pg.draw.line(self.scaled_img_surface, (0, 0, 100), rect.topleft, rect.topright)
@@ -240,15 +246,30 @@ class AutoInspection:
             pg.draw.line(self.scaled_img_surface, (0, 0, 100), rect.topleft, rect.bottomleft)
             pg.draw.line(self.scaled_img_surface, (0, 0, 100), rect.topright, rect.bottomright)
 
+            if v.get('k'):
+                wh = wh * v['k']
+                x1y1 = xy - wh / 2
+                x1y1_ = x1y1 * self.img_size_vector
+                wh_ = wh * self.img_size_vector
+                rect = Rect(x1y1_, wh_)
+
+                pg.draw.rect(self.scaled_img_surface, (200, 255, 0), rect, 1)
+
+        font = pg.font.Font(None, 16)
         for k, v in frame_dict.items():
             xywh = np.array(v.get('xywh'))
-            x1y1wh = xywh - np.array([xywh[2], xywh[3], 0, 0]) / 2
-            x1y1wh_ = x1y1wh * np.tile(self.img_size_vector, 2)
-            rect = Rect(x1y1wh_.astype(int).tolist())
-            font = pg.font.Font(None, 16)
+            xy = xywh[:2]
+            wh = xywh[2:]
+            x1y1 = xy - wh / 2
+            x1y1_ = x1y1 * self.img_size_vector
+            wh_ = wh * self.img_size_vector
+            rect = Rect(x1y1_, wh_)
+
             self.put_text(self.scaled_img_surface, f"{k}", font, rect.topleft, (0, 0, 255), anchor='bottomleft')
 
     def __init__(self):
+        self.model_name = '-'
+
         pg.init()
         pg.display.set_caption('Auto Inspection')
         self.clock = pg.time.Clock()
@@ -256,13 +277,13 @@ class AutoInspection:
         self.display = pg.display.set_mode((1920, 1080))
         self.manager = UIManager(self.display.get_size(), theme_path=self.setup_theme())
         self.right_click = RightClick(self.manager, (1920, 1080))
-        self.frame_dict_time = {}
         self.setup_ui()
 
         self.is_running = True
         self.np_img = np.full((2448, 3264, 3), [10, 100, 10], dtype=np.uint8)
 
         self.frame_dict = {}
+        self.mark_dict = {}
 
     def panel0_setup(self):
         model_label = UILabel(Rect((10, 10), (50, 26)), f'model:', self.manager)
@@ -306,14 +327,31 @@ class AutoInspection:
                 if event.ui_element == self.close_button:
                     self.is_running = False
             if event.type == UI_DROP_DOWN_MENU_CHANGED:
-                model_name = self.model_data_dropdown.selected_option[0]
-                if model_name == '-':
+                self.model_name = self.model_data_dropdown.selected_option[0]
+                if self.model_name == '-':
+                    self.adj_button.disable()
+                    self.predict_button.disable()
                     self.frame_dict = {}
+                    self.mark_dict = {}
                 else:
-                    with open(os.path.join('data', model_name, 'frames pos.json'), 'r') as f:
+                    self.adj_button.enable()
+                    self.predict_button.enable()
+                    with open(os.path.join('data', self.model_name, 'frames pos.json'), 'r') as f:
                         json_data = json.load(f)
                     self.frame_dict = json_data['frames']
-                    with open(os.path.join('data', model_name, 'config.json'), 'r') as f:
+                    self.mark_dict = json_data['marks']
+                    for name, frame in self.frame_dict.items():
+                        frame['color_rect'] = (255, 220, 0)
+                        frame['width_rect'] = 2
+                    for name, frame in self.mark_dict.items():
+                        print(frame)
+                        frame['color_rect'] = (200, 20, 100)
+                        frame['width_rect'] = 1
+                        frame['xy'] = np.array(frame['xywh'][:2])
+                        frame['wh'] = np.array(frame['xywh'][2:])
+                        frame['xywh_around'] = np.concatenate((frame['xy'], frame['wh'] * frame['k']))
+
+                    with open(os.path.join('data', self.model_name, 'config.json'), 'r') as f:
                         config = json.load(f)
                         for k, v in config.items():
                             if k == 'scale_factor':
@@ -322,10 +360,9 @@ class AutoInspection:
                                 self.img_offset = np.array(v)
 
             if event.type == UI_SELECTION_LIST_NEW_SELECTION:
-                model_name = self.model_data_dropdown.selected_option[0]
-                if model_name != '-':
+                if self.model_name != '-':
                     if event.text == 'save config':
-                        with open(os.path.join('data', model_name, 'config.json'), 'w') as f:
+                        with open(os.path.join('data', self.model_name, 'config.json'), 'w') as f:
                             json.dump({
                                 "test": "test",
                                 "scale_factor": self.scale_factor,
@@ -387,6 +424,7 @@ class AutoInspection:
                 if event.type == pg.MOUSEBUTTONUP and event.button == 2:
                     self.moving = False
 
+        self.show_rects_to_surface(self.mark_dict)
         self.show_rects_to_surface(self.frame_dict)
         self.panel1_surface.blit(self.scaled_img_surface,
                                  ((self.panel1_rect.size - self.img_size_vector) / 2 + self.img_offset).tolist())
@@ -403,6 +441,14 @@ class AutoInspection:
             'left_target': self.capture_button
         })
         self.file_dialog = None
+        self.adj_button = UIButton(Rect(10, 50, 100, 70), 'Adj Image', self.manager, anchors={
+            'left_target': self.load_button
+        })
+        self.adj_button.disable()
+        self.predict_button = UIButton(Rect(10, 50, 100, 70), 'Predict', self.manager, anchors={
+            'left_target': self.adj_button
+        })
+        self.predict_button.disable()
 
     def panel2_update(self, events):
         self.panel2_surface.fill((100, 100, 100))
@@ -422,6 +468,9 @@ class AutoInspection:
                                                     allow_picking_directories=True,
                                                     allow_existing_files_only=True,
                                                     allowed_suffixes={".png", ".jpg"})
+                if event.ui_element == self.adj_button:
+                    print(self.mark_dict)
+                    self.np_img = adj_image(self.np_img, self.model_name, self.mark_dict)
             if event.type == UI_FILE_DIALOG_PATH_PICKED:
                 if '.png' in event.text:
                     print(event.text)
