@@ -12,6 +12,7 @@ from pygame_gui import UIManager, UI_FILE_DIALOG_PATH_PICKED, UI_BUTTON_PRESSED,
 from pygame_gui.elements import UIWindow, UIPanel, UILabel, UIButton, UIDropDownMenu, UISelectionList
 from pygame_gui.windows import UIFileDialog
 from adj_image import adj_image
+from manage_json_files import json_load, json_dump, json_update
 
 
 class RightClick:
@@ -268,50 +269,95 @@ class AutoInspection:
             self.put_text(self.scaled_img_surface, f"{k}", font, rect.topleft, (0, 0, 255), anchor='bottomleft')
 
     def __init__(self):
-        self.model_name = '-'
+        self.config = json_load('config.json', default={
+            'device_note': 'PC, RP',
+            'device': 'PC',
+            'model_name': '-',
+            'fullscreen': True,
+        })
+        json_update('config.json', self.config)
+        if self.config['device'] == 'PC':
+            self.window_size = np.array([1920, 1080])
+        else:
+            self.window_size = np.array([800, 480])
+        self.model_name = self.config['model_name']
+
+        self.is_running = True
+        self.np_img = np.full((2448, 3264, 3), [10, 100, 10], dtype=np.uint8)
 
         pg.init()
         pg.display.set_caption('Auto Inspection')
         self.clock = pg.time.Clock()
 
-        self.display = pg.display.set_mode((1920, 1080))
+        self.display = pg.display.set_mode(self.window_size.tolist(), pg.FULLSCREEN if self.config['fullscreen'] else 0)
         self.manager = UIManager(self.display.get_size(), theme_path=self.setup_theme())
-        self.right_click = RightClick(self.manager, (1920, 1080))
+        self.right_click = RightClick(self.manager, self.window_size.tolist())
         self.setup_ui()
+        self.change_model()
 
-        self.is_running = True
-        self.np_img = np.full((2448, 3264, 3), [10, 100, 10], dtype=np.uint8)
+    def change_model(self):
+        if self.model_name == '-':
+            self.adj_button.disable()
+            self.predict_button.disable()
+            self.frame_dict = {}
+            self.mark_dict = {}
+        else:
+            self.adj_button.enable()
+            self.predict_button.enable()
+            with open(os.path.join('data', self.model_name, 'frames pos.json'), 'r') as f:
+                json_data = json.load(f)
+            self.frame_dict = json_data['frames']
+            self.mark_dict = json_data['marks']
+            for name, frame in self.frame_dict.items():
+                frame['color_rect'] = (255, 220, 0)
+                frame['width_rect'] = 2
+            for name, frame in self.mark_dict.items():
+                print(frame)
+                frame['color_rect'] = (200, 20, 100)
+                frame['width_rect'] = 1
+                frame['xy'] = np.array(frame['xywh'][:2])
+                frame['wh'] = np.array(frame['xywh'][2:])
+                frame['xywh_around'] = np.concatenate((frame['xy'], frame['wh'] * frame['k']))
 
-        self.frame_dict = {}
-        self.mark_dict = {}
+            with open(os.path.join('data', self.model_name, 'config.json'), 'r') as f:
+                config = json.load(f)
+                for k, v in config.items():
+                    if k == 'scale_factor':
+                        self.scale_factor = v
+                    elif k == 'img_offset':
+                        self.img_offset = np.array(v)
 
     def panel0_setup(self):
-        model_label = UILabel(Rect((10, 10), (50, 26)), f'model:', self.manager)
+        rect = Rect((10, 10), (50, 26)) if self.config['device'] == 'PC' else Rect((10, 5), (50, 26))
+        model_label = UILabel(rect, f'model:', self.manager)
         os.makedirs('data', exist_ok=True)
         model_data = os.listdir('data') + ['-']
-        self.model_data_dropdown = UIDropDownMenu(model_data, '-', Rect(10, 5, 300, 30), self.manager, anchors={
+        rect = Rect(10, 5, 300, 30) if self.config['device'] == 'PC' else Rect(10, 0, 300, 30)
+        self.model_data_dropdown = UIDropDownMenu(model_data, '-', rect, self.manager, anchors={
             'left_target': model_label})
-
-        self.close_button = UIButton(Rect((-50, 0, 50, 40)), f'X', self.manager, anchors={
+        rect = Rect(-50, 0, 50, 40) if self.config['device'] == 'PC' else Rect(-40, 0, 40, 30)
+        self.close_button = UIButton(rect, f'X', self.manager, anchors={
             'top': 'top',
             'left': 'right',
             'bottom': 'top',
             'right': 'right'})
-
-        self.t1 = UILabel(Rect((10, -30), (50, 26)), '', self.manager, anchors={
+        rect = Rect((10, -30), (50, 26)) if self.config['device'] == 'PC' else Rect((10, -24), (50, 26))
+        self.t1 = UILabel(rect, '', self.manager, anchors={
             'top': 'bottom',
             'left': 'left',
             'bottom': 'bottom',
             'right': 'left'
         })
-        self.t2 = UILabel(Rect((10, -30), (170, 26)), '', self.manager, anchors={
+        rect = Rect((10, -30), (170, 26)) if self.config['device'] == 'PC' else Rect((10, -24), (170, 26))
+        self.t2 = UILabel(rect, '', self.manager, anchors={
             'top': 'bottom',
             'left': 'left',
             'bottom': 'bottom',
             'right': 'left',
             'left_target': self.t1
         })
-        self.t3 = UILabel(Rect((10, -30), (150, 26)), '', self.manager, anchors={
+        rect = Rect((10, -30), (150, 26)) if self.config['device'] == 'PC' else Rect((10, -24), (150, 26))
+        self.t3 = UILabel(rect, '', self.manager, anchors={
             'top': 'bottom',
             'left': 'left',
             'bottom': 'bottom',
@@ -328,36 +374,7 @@ class AutoInspection:
                     self.is_running = False
             if event.type == UI_DROP_DOWN_MENU_CHANGED:
                 self.model_name = self.model_data_dropdown.selected_option[0]
-                if self.model_name == '-':
-                    self.adj_button.disable()
-                    self.predict_button.disable()
-                    self.frame_dict = {}
-                    self.mark_dict = {}
-                else:
-                    self.adj_button.enable()
-                    self.predict_button.enable()
-                    with open(os.path.join('data', self.model_name, 'frames pos.json'), 'r') as f:
-                        json_data = json.load(f)
-                    self.frame_dict = json_data['frames']
-                    self.mark_dict = json_data['marks']
-                    for name, frame in self.frame_dict.items():
-                        frame['color_rect'] = (255, 220, 0)
-                        frame['width_rect'] = 2
-                    for name, frame in self.mark_dict.items():
-                        print(frame)
-                        frame['color_rect'] = (200, 20, 100)
-                        frame['width_rect'] = 1
-                        frame['xy'] = np.array(frame['xywh'][:2])
-                        frame['wh'] = np.array(frame['xywh'][2:])
-                        frame['xywh_around'] = np.concatenate((frame['xy'], frame['wh'] * frame['k']))
-
-                    with open(os.path.join('data', self.model_name, 'config.json'), 'r') as f:
-                        config = json.load(f)
-                        for k, v in config.items():
-                            if k == 'scale_factor':
-                                self.scale_factor = v
-                            elif k == 'img_offset':
-                                self.img_offset = np.array(v)
+                self.change_model()
 
             if event.type == UI_SELECTION_LIST_NEW_SELECTION:
                 if self.model_name != '-':
@@ -377,7 +394,7 @@ class AutoInspection:
         self.t3.set_text(f'{round(self.scale_factor, 2)} {self.img_offset.astype(int)}')
 
     def panel1_setup(self):
-        self.panel1_rect = Rect(0, 40, 1347, 1010)
+        self.panel1_rect = Rect(0, 40, 1347, 1010) if self.config['device'] == 'PC' else Rect(0, 30, 600, 430)
         self.panel1_surface = Surface(self.panel1_rect.size)
 
         self.scale_factor = 1
@@ -430,24 +447,40 @@ class AutoInspection:
                                  ((self.panel1_rect.size - self.img_size_vector) / 2 + self.img_offset).tolist())
 
     def panel2_setup(self):
-        self.panel2_rect = Rect((1347, 40, 1920 - 1347, 1010))
+        self.panel2_rect = Rect((1347, 40, 1920 - 1347, 1010)) if self.config['device'] == 'PC' else Rect(
+            (600, 30, 200, 430))
         self.panel2_surface = Surface(self.panel2_rect.size)
 
-        self.capture_button = UIButton(Rect(1357, 50, 100, 50), 'Capture', self.manager, )
-        self.auto_cap_button = UIButton(Rect(1357, 0, 100, 20), 'AutoCapture', self.manager, anchors={
-            'top_target': self.capture_button
-        })
-        self.load_button = UIButton(Rect(10, 50, 100, 70), 'Load Image', self.manager, anchors={
-            'left_target': self.capture_button
-        })
+        if self.config['device'] == 'PC':
+            self.capture_button = UIButton(Rect(1357, 50, 100, 50), 'Capture', self.manager, )
+            self.auto_cap_button = UIButton(Rect(1357, 0, 100, 20), 'AutoCapture', self.manager, anchors={
+                'top_target': self.capture_button
+            })
+            self.load_button = UIButton(Rect(10, 50, 100, 70), 'Load Image', self.manager, anchors={
+                'left_target': self.capture_button
+            })
+            self.adj_button = UIButton(Rect(10, 50, 100, 70), 'Adj Image', self.manager, anchors={
+                'left_target': self.load_button
+            })
+            self.predict_button = UIButton(Rect(10, 50, 100, 70), 'Predict', self.manager, anchors={
+                'left_target': self.adj_button
+            })
+        else:
+            self.capture_button = UIButton(Rect(605, 35, 60, 50), 'Capture', self.manager, )
+            self.auto_cap_button = UIButton(Rect(605, 0, 60, 20), 'Auto', self.manager, anchors={
+                'top_target': self.capture_button
+            })
+            self.load_button = UIButton(Rect(5, 35, 60, 70), 'Load Image', self.manager, anchors={
+                'left_target': self.capture_button
+            })
+            self.adj_button = UIButton(Rect(5, 35, 60, 35), 'Adj Image', self.manager, anchors={
+                'left_target': self.load_button
+            })
+            self.predict_button = UIButton(Rect(5, 0, 60, 35), 'Predict', self.manager, anchors={
+                'left_target': self.load_button, 'top_target': self.adj_button
+            })
         self.file_dialog = None
-        self.adj_button = UIButton(Rect(10, 50, 100, 70), 'Adj Image', self.manager, anchors={
-            'left_target': self.load_button
-        })
         self.adj_button.disable()
-        self.predict_button = UIButton(Rect(10, 50, 100, 70), 'Predict', self.manager, anchors={
-            'left_target': self.adj_button
-        })
         self.predict_button.disable()
 
     def panel2_update(self, events):
@@ -461,7 +494,8 @@ class AutoInspection:
                     self.auto_cap_button.set_text('AutoCapture' if self.auto_cap_button.text == 'Stop' else 'Stop')
                 if event.ui_element == self.load_button:
                     self.auto_cap_button.set_text('AutoCapture')
-                    self.file_dialog = UIFileDialog(Rect(1360, 130, 440, 500),
+                    rect = Rect(1360, 130, 440, 500) if self.config['device'] == 'PC' else Rect(200, 50, 400, 400)
+                    self.file_dialog = UIFileDialog(rect,
                                                     self.manager,
                                                     window_title='Load Image...',
                                                     initial_file_path='data',
