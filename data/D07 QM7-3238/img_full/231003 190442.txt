@@ -1,0 +1,14 @@
+c1.1:white
+c1.2:white
+c2.1:yellow
+c2.2:yellow
+c5.1:wrongpart
+c5.2:wrongpart
+c7.1:black
+c7.2:black
+c10.1:wrongpart
+c10.2:wrongpart
+c11.1:wrongpart
+c11.2:wrongpart
+c13.1:ok
+c13.2:ok

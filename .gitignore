@@ -1,0 +1,6 @@
+.venv/
+.idea/
+__pycache__/
+*/__pycache__/
+*/*/__pycache__/
+data/*/img_frame_log

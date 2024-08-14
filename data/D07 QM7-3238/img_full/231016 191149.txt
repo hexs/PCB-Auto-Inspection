@@ -1,0 +1,8 @@
+c6.1:ok
+c6.2:ok
+c7.1:yellow
+c7.2:yellow
+c10.1:ok
+c10.2:ok
+c15.1:ok
+c15.2:ok
