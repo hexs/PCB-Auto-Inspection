@@ -3,7 +3,7 @@ import json
 from typing import Dict, Any
 
 
-def json_load(file_path: str, default: Dict[str, Any] = {}) -> Dict[str, Any]:
+def json_load(file_path: str, default=None) -> Dict[str, Any]:
     """
     Load JSON data from a file.
 
@@ -21,6 +21,8 @@ def json_load(file_path: str, default: Dict[str, Any] = {}) -> Dict[str, Any]:
     if not file_path.lower().endswith('.json'):
         raise ValueError("File extension must be .json")
 
+    if default is None:
+        default = {}
     data = default
 
     if os.path.exists(file_path):

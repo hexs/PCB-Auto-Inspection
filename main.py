@@ -16,8 +16,7 @@ from manage_json_files import json_load, json_dump, json_update
 
 
 class RightClick:
-    def __init__(self, manager, window_size):
-        self.manager = manager
+    def __init__(self, app, window_size):
         self.options_list = {'1', }
         self.selection = None
         self.window_size = np.array(window_size)
@@ -34,7 +33,7 @@ class RightClick:
         self.selection = UISelectionList(
             Rect(pos, selection_size),
             item_list=(options_list),
-            manager=self.manager,
+            manager=app.manager,
         )
 
     def kill(self):
@@ -42,7 +41,7 @@ class RightClick:
             self.selection.kill()
             self.selection = None
 
-    def events(self, events, can_wheel=True):
+    def events(self, events):
         for event in events:
             if event.type == UI_SELECTION_LIST_NEW_SELECTION:
                 print(f"RightClick: {event.text}")
@@ -54,8 +53,8 @@ class RightClick:
                         self.kill()
                 elif event.button == 3:  # Right mouse button
                     self.kill()
-                    if len(self.options_list) > 0 and can_wheel:
-                        if event.pos[1] > 1050:
+                    if len(self.options_list) > 0:
+                        if app.scale_and_offset_label.get_abs_rect().collidepoint(mouse.get_pos()):
                             self.create_selection(event.pos, {'save config'})
                         else:
                             self.create_selection(event.pos, self.options_list)
@@ -272,11 +271,13 @@ class AutoInspection:
         self.config = json_load('config.json', default={
             'device_note': 'PC, RP',
             'device': 'PC',
+            'resolution_note': '1920x1080, 800x480',
+            'resolution': '1920x1080',
             'model_name': '-',
             'fullscreen': True,
         })
         json_update('config.json', self.config)
-        if self.config['device'] == 'PC':
+        if self.config['resolution'] == '1920x1080':
             self.window_size = np.array([1920, 1080])
         else:
             self.window_size = np.array([800, 480])
@@ -291,7 +292,7 @@ class AutoInspection:
 
         self.display = pg.display.set_mode(self.window_size.tolist(), pg.FULLSCREEN if self.config['fullscreen'] else 0)
         self.manager = UIManager(self.display.get_size(), theme_path=self.setup_theme())
-        self.right_click = RightClick(self.manager, self.window_size.tolist())
+        self.right_click = RightClick(self, self.window_size.tolist())
         self.setup_ui()
         self.change_model()
 
@@ -304,8 +305,7 @@ class AutoInspection:
         else:
             self.adj_button.enable()
             self.predict_button.enable()
-            with open(os.path.join('data', self.model_name, 'frames pos.json'), 'r') as f:
-                json_data = json.load(f)
+            json_data = json_load(os.path.join('data', self.model_name, 'frames pos.json'))
             self.frame_dict = json_data['frames']
             self.mark_dict = json_data['marks']
             for name, frame in self.frame_dict.items():
@@ -318,51 +318,50 @@ class AutoInspection:
                 frame['xy'] = np.array(frame['xywh'][:2])
                 frame['wh'] = np.array(frame['xywh'][2:])
                 frame['xywh_around'] = np.concatenate((frame['xy'], frame['wh'] * frame['k']))
-
-            with open(os.path.join('data', self.model_name, 'config.json'), 'r') as f:
-                config = json.load(f)
-                for k, v in config.items():
+            config = json_load(os.path.join('data', self.model_name, 'model_config.json'))
+            if config.get(self.config['resolution']):
+                for k, v in config[self.config['resolution']].items():
                     if k == 'scale_factor':
                         self.scale_factor = v
                     elif k == 'img_offset':
                         self.img_offset = np.array(v)
 
     def panel0_setup(self):
-        rect = Rect((10, 10), (50, 26)) if self.config['device'] == 'PC' else Rect((10, 5), (50, 26))
+        rect = Rect(10, 10, 50, 26) if self.config['resolution'] == '1920x1080' else Rect(10, 5, 50, 26)
         model_label = UILabel(rect, f'model:', self.manager)
         os.makedirs('data', exist_ok=True)
         model_data = os.listdir('data') + ['-']
-        rect = Rect(10, 5, 300, 30) if self.config['device'] == 'PC' else Rect(10, 0, 300, 30)
+        rect = Rect(10, 5, 300, 30) if self.config['resolution'] == '1920x1080' else Rect(10, 0, 300, 30)
         self.model_data_dropdown = UIDropDownMenu(model_data, '-', rect, self.manager, anchors={
             'left_target': model_label})
-        rect = Rect(-50, 0, 50, 40) if self.config['device'] == 'PC' else Rect(-40, 0, 40, 30)
+        rect = Rect(-50, 0, 50, 40) if self.config['resolution'] == '1920x1080' else Rect(-40, 0, 40, 30)
         self.close_button = UIButton(rect, f'X', self.manager, anchors={
             'top': 'top',
             'left': 'right',
             'bottom': 'top',
             'right': 'right'})
-        rect = Rect((10, -30), (50, 26)) if self.config['device'] == 'PC' else Rect((10, -24), (50, 26))
-        self.t1 = UILabel(rect, '', self.manager, anchors={
+        rect = Rect(10, -30, 50, 26) if self.config['resolution'] == '1920x1080' else Rect(10, -24, 50, 26)
+        self.fps_label = UILabel(rect, '', self.manager, anchors={
             'top': 'bottom',
             'left': 'left',
             'bottom': 'bottom',
             'right': 'left'
         })
-        rect = Rect((10, -30), (170, 26)) if self.config['device'] == 'PC' else Rect((10, -24), (170, 26))
-        self.t2 = UILabel(rect, '', self.manager, anchors={
+        rect = Rect(10, -30, 170, 26) if self.config['resolution'] == '1920x1080' else Rect(10, -24, 170, 26)
+        self.mouse_pos_label = UILabel(rect, '', self.manager, anchors={
             'top': 'bottom',
             'left': 'left',
             'bottom': 'bottom',
             'right': 'left',
-            'left_target': self.t1
+            'left_target': self.fps_label
         })
-        rect = Rect((10, -30), (150, 26)) if self.config['device'] == 'PC' else Rect((10, -24), (150, 26))
-        self.t3 = UILabel(rect, '', self.manager, anchors={
+        rect = Rect(10, -30, 150, 26) if self.config['resolution'] == '1920x1080' else Rect(10, -24, 150, 26)
+        self.scale_and_offset_label = UILabel(rect, '', self.manager, anchors={
             'top': 'bottom',
             'left': 'left',
             'bottom': 'bottom',
             'right': 'left',
-            'left_target': self.t2
+            'left_target': self.mouse_pos_label
         })
 
     def panel0_update(self, events):
@@ -376,25 +375,27 @@ class AutoInspection:
                 self.model_name = self.model_data_dropdown.selected_option[0]
                 self.change_model()
 
-            if event.type == UI_SELECTION_LIST_NEW_SELECTION:
+            if event.type == UI_SELECTION_LIST_NEW_SELECTION:  # right click and select click
                 if self.model_name != '-':
                     if event.text == 'save config':
-                        with open(os.path.join('data', self.model_name, 'config.json'), 'w') as f:
-                            json.dump({
-                                "test": "test",
+                        json_update(os.path.join('data', self.model_name, 'model_config.json'), {
+                            f"{self.config['resolution']}": {
                                 "scale_factor": self.scale_factor,
                                 "img_offset": self.img_offset.tolist()
-                            }, f, indent=4)
+                            }
+                        })
 
-        t2 = f'pos: {pg.mouse.get_pos()} '
-        t2 += 'panel1' if self.panel1_rect.collidepoint(pg.mouse.get_pos()) else ''
-        t2 += 'panel2' if self.panel2_rect.collidepoint(pg.mouse.get_pos()) else ''
-        self.t1.set_text(f'fps: {round(self.clock.get_fps())}')
-        self.t2.set_text(t2)
-        self.t3.set_text(f'{round(self.scale_factor, 2)} {self.img_offset.astype(int)}')
+        t = f'pos: {pg.mouse.get_pos()} '
+        t += 'panel1' if self.panel1_rect.collidepoint(pg.mouse.get_pos()) else ''
+        t += 'panel2' if self.panel2_rect.collidepoint(pg.mouse.get_pos()) else ''
+        self.fps_label.set_text(f'fps: {round(self.clock.get_fps())}')
+        self.mouse_pos_label.set_text(t)
+        self.scale_and_offset_label.set_text(f'{round(self.scale_factor, 2)} {self.img_offset.astype(int)}')
 
     def panel1_setup(self):
-        self.panel1_rect = Rect(0, 40, 1347, 1010) if self.config['device'] == 'PC' else Rect(0, 30, 600, 430)
+        self.panel1_rect = Rect(0, 40, 1347, 1010) \
+            if self.config['resolution'] == '1920x1080' \
+            else Rect(0, 30, 600, 430)
         self.panel1_surface = Surface(self.panel1_rect.size)
 
         self.scale_factor = 1
@@ -447,11 +448,12 @@ class AutoInspection:
                                  ((self.panel1_rect.size - self.img_size_vector) / 2 + self.img_offset).tolist())
 
     def panel2_setup(self):
-        self.panel2_rect = Rect((1347, 40, 1920 - 1347, 1010)) if self.config['device'] == 'PC' else Rect(
-            (600, 30, 200, 430))
+        self.panel2_rect = Rect(1347, 40, 1920 - 1347, 1010) \
+            if self.config['resolution'] == '1920x1080' \
+            else Rect(600, 30, 200, 430)
         self.panel2_surface = Surface(self.panel2_rect.size)
 
-        if self.config['device'] == 'PC':
+        if self.config['resolution'] == '1920x1080':
             self.capture_button = UIButton(Rect(1357, 50, 100, 50), 'Capture', self.manager, )
             self.auto_cap_button = UIButton(Rect(1357, 0, 100, 20), 'AutoCapture', self.manager, anchors={
                 'top_target': self.capture_button
@@ -494,10 +496,10 @@ class AutoInspection:
                     self.auto_cap_button.set_text('AutoCapture' if self.auto_cap_button.text == 'Stop' else 'Stop')
                 if event.ui_element == self.load_button:
                     self.auto_cap_button.set_text('AutoCapture')
-                    rect = Rect(1360, 130, 440, 500) if self.config['device'] == 'PC' else Rect(200, 50, 400, 400)
-                    self.file_dialog = UIFileDialog(rect,
-                                                    self.manager,
-                                                    window_title='Load Image...',
+                    rect = Rect(1360, 130, 440, 500) \
+                        if self.config['resolution'] == '1920x1080' \
+                        else Rect(200, 50, 400, 400)
+                    self.file_dialog = UIFileDialog(rect, self.manager, 'Load Image...',
                                                     initial_file_path='data',
                                                     allow_picking_directories=True,
                                                     allow_existing_files_only=True,
