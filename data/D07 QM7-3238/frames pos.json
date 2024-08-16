@@ -1,7 +1,7 @@
 {
   "frames": {
     "usb.1": {
-      "pcb_frame_name": "J721_1",
+      "frame_name": "J721_1",
       "xywh": [
         0.089671875,
         0.24422916666666666,
@@ -23,7 +23,7 @@
       }
     },
     "usb.2": {
-      "pcb_frame_name": "J721_2",
+      "frame_name": "J721_2",
       "xywh": [
         0.088109375,
         0.5666666666666667,
@@ -47,7 +47,7 @@
       }
     },
     "RJ45.1": {
-      "pcb_frame_name": "J1101_1",
+      "frame_name": "J1101_1",
       "xywh": [
         0.10382812500000001,
         0.32964583333333336,
@@ -71,7 +71,7 @@
       }
     },
     "RJ45.2": {
-      "pcb_frame_name": "J1101_2",
+      "frame_name": "J1101_2",
       "xywh": [
         0.10400000000000001,
         0.6540833333333333,
@@ -95,7 +95,7 @@
       }
     },
     "crys1.1": {
-      "pcb_frame_name": "X201_1",
+      "frame_name": "X201_1",
       "xywh": [
         0.20725,
         0.17916666666666667,
@@ -119,7 +119,7 @@
       }
     },
     "crys1.2": {
-      "pcb_frame_name": "X201_2",
+      "frame_name": "X201_2",
       "xywh": [
         0.204296875,
         0.5066458333333334,
@@ -143,7 +143,7 @@
       }
     },
     "crys2.1": {
-      "pcb_frame_name": "X1101_1",
+      "frame_name": "X1101_1",
       "xywh": [
         0.1953125,
         0.26927083333333335,
@@ -167,7 +167,7 @@
       }
     },
     "crys2.2": {
-      "pcb_frame_name": "X1101_2",
+      "frame_name": "X1101_2",
       "xywh": [
         0.1953125,
         0.5973958333333333,
@@ -191,7 +191,7 @@
       }
     },
     "L1.1": {
-      "pcb_frame_name": "L951_1",
+      "frame_name": "L951_1",
       "xywh": [
         0.1505625,
         0.3233958333333333,
@@ -215,7 +215,7 @@
       }
     },
     "L1.2": {
-      "pcb_frame_name": "L951_2",
+      "frame_name": "L951_2",
       "xywh": [
         0.15234375,
         0.6510833333333333,
@@ -239,7 +239,7 @@
       }
     },
     "L2.1": {
-      "pcb_frame_name": "L941_1",
+      "frame_name": "L941_1",
       "xywh": [
         0.150953125,
         0.3994375,
@@ -263,7 +263,7 @@
       }
     },
     "L2.2": {
-      "pcb_frame_name": "L941_2",
+      "frame_name": "L941_2",
       "xywh": [
         0.153125,
         0.7270416666666667,
@@ -287,7 +287,7 @@
       }
     },
     "L3.1": {
-      "pcb_frame_name": "L931_1",
+      "frame_name": "L931_1",
       "xywh": [
         0.094140625,
         0.41710416666666666,
@@ -311,7 +311,7 @@
       }
     },
     "L3.2": {
-      "pcb_frame_name": "L931_2",
+      "frame_name": "L931_2",
       "xywh": [
         0.097875,
         0.74275,
@@ -335,7 +335,7 @@
       }
     },
     "Cap1.1": {
-      "pcb_frame_name": "C951_1",
+      "frame_name": "C951_1",
       "xywh": [
         0.181296875,
         0.32335416666666666,
@@ -360,7 +360,7 @@
       }
     },
     "Cap1.2": {
-      "pcb_frame_name": "C951_2",
+      "frame_name": "C951_2",
       "xywh": [
         0.180859375,
         0.6515625,
@@ -385,7 +385,7 @@
       }
     },
     "Cap2.1": {
-      "pcb_frame_name": "C941_1",
+      "frame_name": "C941_1",
       "xywh": [
         0.14453125,
         0.36302083333333335,
@@ -410,7 +410,7 @@
       }
     },
     "Cap2.2": {
-      "pcb_frame_name": "C941_2",
+      "frame_name": "C941_2",
       "xywh": [
         0.1484375,
         0.6916666666666667,
@@ -435,7 +435,7 @@
       }
     },
     "Cap3.1": {
-      "pcb_frame_name": "C931_1",
+      "frame_name": "C931_1",
       "xywh": [
         0.07421875,
         0.3963541666666667,
@@ -460,7 +460,7 @@
       }
     },
     "Cap3.2": {
-      "pcb_frame_name": "C931_2",
+      "frame_name": "C931_2",
       "xywh": [
         0.077,
         0.725,
@@ -485,7 +485,7 @@
       }
     },
     "Cap4.1": {
-      "pcb_frame_name": "C1002_1",
+      "frame_name": "C1002_1",
       "xywh": [
         0.42578125,
         0.30091666666666667,
@@ -509,7 +509,7 @@
       }
     },
     "Cap4.2": {
-      "pcb_frame_name": "C1002_2",
+      "frame_name": "C1002_2",
       "xywh": [
         0.42678125,
         0.6358125,
@@ -533,7 +533,7 @@
       }
     },
     "Cap5.1": {
-      "pcb_frame_name": "C1004_1",
+      "frame_name": "C1004_1",
       "xywh": [
         0.118359375,
         0.3952291666666667,
@@ -557,7 +557,7 @@
       }
     },
     "Cap5.2": {
-      "pcb_frame_name": "C1004_2",
+      "frame_name": "C1004_2",
       "xywh": [
         0.12109375,
         0.7264791666666667,
@@ -581,7 +581,7 @@
       }
     },
     "c1.1": {
-      "pcb_frame_name": "J851_1",
+      "frame_name": "J851_1",
       "xywh": [
         0.453515625,
         0.20885416666666667,
@@ -607,7 +607,7 @@
       }
     },
     "c1.2": {
-      "pcb_frame_name": "J851_2",
+      "frame_name": "J851_2",
       "xywh": [
         0.454515625,
         0.5421458333333333,
@@ -633,7 +633,7 @@
       }
     },
     "c2.1": {
-      "pcb_frame_name": "J841_1",
+      "frame_name": "J841_1",
       "xywh": [
         0.48225,
         0.2088125,
@@ -659,7 +659,7 @@
       }
     },
     "c2.2": {
-      "pcb_frame_name": "J841_2",
+      "frame_name": "J841_2",
       "xywh": [
         0.48146875,
         0.5411041666666667,
@@ -685,7 +685,7 @@
       }
     },
     "c3.1": {
-      "pcb_frame_name": "J876_1",
+      "frame_name": "J876_1",
       "xywh": [
         0.50959375,
         0.2190625,
@@ -709,7 +709,7 @@
       }
     },
     "c3.2": {
-      "pcb_frame_name": "J876_2",
+      "frame_name": "J876_2",
       "xywh": [
         0.509765625,
         0.5525625,
@@ -733,7 +733,7 @@
       }
     },
     "c4.1": {
-      "pcb_frame_name": "J1051_1",
+      "frame_name": "J1051_1",
       "xywh": [
         0.478125,
         0.26345833333333335,
@@ -757,7 +757,7 @@
       }
     },
     "c4.2": {
-      "pcb_frame_name": "J1051_2",
+      "frame_name": "J1051_2",
       "xywh": [
         0.47890625,
         0.5968333333333333,
@@ -781,7 +781,7 @@
       }
     },
     "c5.1": {
-      "pcb_frame_name": "xxx_1",
+      "frame_name": "xxx_1",
       "xywh": [
         0.493796875,
         0.31454166666666666,
@@ -805,7 +805,7 @@
       }
     },
     "c5.2": {
-      "pcb_frame_name": "xxx_2",
+      "frame_name": "xxx_2",
       "xywh": [
         0.494359375,
         0.646875,
@@ -829,7 +829,7 @@
       }
     },
     "c6.1": {
-      "pcb_frame_name": "J811_1",
+      "frame_name": "J811_1",
       "xywh": [
         0.51059375,
         0.3723125,
@@ -853,7 +853,7 @@
       }
     },
     "c6.2": {
-      "pcb_frame_name": "J811_2",
+      "frame_name": "J811_2",
       "xywh": [
         0.510765625,
         0.7042083333333333,
@@ -877,7 +877,7 @@
       }
     },
     "c7.1": {
-      "pcb_frame_name": "J861_1",
+      "frame_name": "J861_1",
       "xywh": [
         0.511375,
         0.4166666666666667,
@@ -903,7 +903,7 @@
       }
     },
     "c7.2": {
-      "pcb_frame_name": "J861_2",
+      "frame_name": "J861_2",
       "xywh": [
         0.511765625,
         0.7505208333333333,
@@ -929,7 +929,7 @@
       }
     },
     "c8.1": {
-      "pcb_frame_name": "J1001_1",
+      "frame_name": "J1001_1",
       "xywh": [
         0.147265625,
         0.46297916666666666,
@@ -953,7 +953,7 @@
       }
     },
     "c8.2": {
-      "pcb_frame_name": "J1001_2",
+      "frame_name": "J1001_2",
       "xywh": [
         0.151171875,
         0.7905,
@@ -977,7 +977,7 @@
       }
     },
     "c9.1": {
-      "pcb_frame_name": "J971_1",
+      "frame_name": "J971_1",
       "xywh": [
         0.187328125,
         0.46297916666666666,
@@ -1001,7 +1001,7 @@
       }
     },
     "c9.2": {
-      "pcb_frame_name": "J971_2",
+      "frame_name": "J971_2",
       "xywh": [
         0.191671875,
         0.7905416666666667,
@@ -1025,7 +1025,7 @@
       }
     },
     "c10.1": {
-      "pcb_frame_name": "J981_1",
+      "frame_name": "J981_1",
       "xywh": [
         0.219359375,
         0.463375,
@@ -1049,7 +1049,7 @@
       }
     },
     "c10.2": {
-      "pcb_frame_name": "J981_2",
+      "frame_name": "J981_2",
       "xywh": [
         0.22365625,
         0.7905416666666667,
@@ -1073,7 +1073,7 @@
       }
     },
     "c11.1": {
-      "pcb_frame_name": "J891_1",
+      "frame_name": "J891_1",
       "xywh": [
         0.248875,
         0.46441666666666664,
@@ -1097,7 +1097,7 @@
       }
     },
     "c11.2": {
-      "pcb_frame_name": "J891_2",
+      "frame_name": "J891_2",
       "xywh": [
         0.253515625,
         0.7917083333333333,
@@ -1121,7 +1121,7 @@
       }
     },
     "c12.1": {
-      "pcb_frame_name": "J821_1",
+      "frame_name": "J821_1",
       "xywh": [
         0.28034375,
         0.46397916666666666,
@@ -1145,7 +1145,7 @@
       }
     },
     "c12.2": {
-      "pcb_frame_name": "J821_2",
+      "frame_name": "J821_2",
       "xywh": [
         0.28203125,
         0.7927083333333333,
@@ -1169,7 +1169,7 @@
       }
     },
     "c13.1": {
-      "pcb_frame_name": "J831_1",
+      "frame_name": "J831_1",
       "xywh": [
         0.3625,
         0.4628541666666667,
@@ -1193,7 +1193,7 @@
       }
     },
     "c13.2": {
-      "pcb_frame_name": "J831_2",
+      "frame_name": "J831_2",
       "xywh": [
         0.3645,
         0.7941458333333333,
@@ -1217,7 +1217,7 @@
       }
     },
     "c14.1": {
-      "pcb_frame_name": "J881_1",
+      "frame_name": "J881_1",
       "xywh": [
         0.389453125,
         0.4619375,
@@ -1241,7 +1241,7 @@
       }
     },
     "c14.2": {
-      "pcb_frame_name": "J881_2",
+      "frame_name": "J881_2",
       "xywh": [
         0.3890625,
         0.7941875,
@@ -1265,7 +1265,7 @@
       }
     },
     "c15.1": {
-      "pcb_frame_name": "J502_1",
+      "frame_name": "J502_1",
       "xywh": [
         0.401,
         0.398,
@@ -1289,7 +1289,7 @@
       }
     },
     "c15.2": {
-      "pcb_frame_name": "J502_2",
+      "frame_name": "J502_2",
       "xywh": [
         0.403,
         0.731,
@@ -1311,6 +1311,159 @@
           "nopart"
         ]
       }
+    }
+  },
+  "models": {
+    "usb": {
+      "class_names": [
+        "ok",
+        "nopart"
+      ]
+    },
+    "RJ45": {
+      "class_names": [
+        "ok",
+        "nopart"
+      ]
+    },
+    "crys": {
+      "class_names": [
+        "ok",
+        "nopart"
+      ]
+    },
+    "L": {
+      "class_names": [
+        "ok",
+        "nopart"
+      ]
+    },
+    "Cap1": {
+      "class_names": [
+        "ok_orange",
+        "ok_white",
+        "nopart",
+        "wrongpolarity"
+      ]
+    },
+    "Cap2": {
+      "class_names": [
+        "ok_orange",
+        "ok_white",
+        "nopart",
+        "wrongpolarity"
+      ]
+    },
+    "Cap3": {
+      "class_names": [
+        "ok_orange",
+        "ok_white",
+        "nopart",
+        "wrongpolarity"
+      ]
+    },
+    "Cap45": {
+      "class_names": [
+        "ok",
+        "nopart",
+        "wrongpolarity"
+      ]
+    },
+    "c127": {
+      "class_names": [
+        "white",
+        "yellow",
+        "black",
+        "nopart",
+        "wrongpart",
+        "wrongpolarity"
+      ]
+    },
+    "c3": {
+      "class_names": [
+        "ok",
+        "nopart",
+        "wrongpolarity"
+      ]
+    },
+    "c4": {
+      "class_names": [
+        "ok",
+        "nopart"
+      ]
+    },
+    "c5": {
+      "class_names": [
+        "ok",
+        "nopart",
+        "wrongpart",
+        "wrongpolarity"
+      ]
+    },
+    "c6": {
+      "class_names": [
+        "ok",
+        "nopart",
+        "wrongpart",
+        "wrongpolarity"
+      ]
+    },
+    "c8": {
+      "class_names": [
+        "ok",
+        "nopart",
+        "wrongpolarity"
+      ]
+    },
+    "c9": {
+      "class_names": [
+        "ok",
+        "nopart",
+        "wrongpolarity"
+      ]
+    },
+    "c10": {
+      "class_names": [
+        "ok",
+        "nopart",
+        "wrongpart",
+        "wrongpolarity"
+      ]
+    },
+    "c11": {
+      "class_names": [
+        "ok",
+        "nopart",
+        "wrongpart"
+      ]
+    },
+    "c12": {
+      "class_names": [
+        "ok",
+        "nopart",
+        "wrongpolarity"
+      ]
+    },
+    "c13": {
+      "class_names": [
+        "ok",
+        "nopart",
+        "wrongpart",
+        "wrongpolarity"
+      ]
+    },
+    "c14": {
+      "class_names": [
+        "ok",
+        "nopart",
+        "wrongpolarity"
+      ]
+    },
+    "c15": {
+      "class_names": [
+        "ok",
+        "nopart"
+      ]
     }
   },
   "marks": {

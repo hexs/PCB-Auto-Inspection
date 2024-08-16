@@ -4,5 +4,8 @@ __pycache__/
 */__pycache__/
 */*/__pycache__/
 data/*/img_frame_log
+data/*/img_frame
+data/*/log_img
+data/*/log_img_original
 
 config.json

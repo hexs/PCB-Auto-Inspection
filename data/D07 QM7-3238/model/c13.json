@@ -1,6 +1,8 @@
-[
-    "nopart",
-    "ok",
-    "wrongpart",
-    "wrongpolarity"
-]
+{
+    "model_class_names": [
+        "nopart",
+        "ok",
+        "wrongpart",
+        "wrongpolarity"
+    ]
+}

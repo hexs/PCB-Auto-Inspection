@@ -1,4 +1,6 @@
-[
-    "nopart",
-    "ok"
-]
+{
+    "model_class_names": [
+        "nopart",
+        "ok"
+    ]
+}

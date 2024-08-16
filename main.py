@@ -13,6 +13,9 @@ from pygame_gui.elements import UIWindow, UIPanel, UILabel, UIButton, UIDropDown
 from pygame_gui.windows import UIFileDialog
 from adj_image import adj_image
 from manage_json_files import json_load, json_dump, json_update
+from keras import models
+from constant import *
+from training import crop_img
 
 
 class RightClick:
@@ -32,7 +35,7 @@ class RightClick:
         pos = np.minimum(mouse_pos, self.window_size - selection_size)
         self.selection = UISelectionList(
             Rect(pos, selection_size),
-            item_list=(options_list),
+            item_list=options_list,
             manager=app.manager,
         )
 
@@ -55,7 +58,7 @@ class RightClick:
                     self.kill()
                     if len(self.options_list) > 0:
                         if app.scale_and_offset_label.get_abs_rect().collidepoint(mouse.get_pos()):
-                            self.create_selection(event.pos, {'save config'})
+                            self.create_selection(event.pos, {'save config', 'save mark'})
                         else:
                             self.create_selection(event.pos, self.options_list)
 
@@ -265,7 +268,10 @@ class AutoInspection:
             wh_ = wh * self.img_size_vector
             rect = Rect(x1y1_, wh_)
 
-            self.put_text(self.scaled_img_surface, f"{k}", font, rect.topleft, (0, 0, 255), anchor='bottomleft')
+            text = f"{k}"
+            if v.get('highest_score_name'):
+                text += f" {v['highest_score_name']} {v['highest_score_percent']}"
+            self.put_text(self.scaled_img_surface, text, font, rect.topleft, (0, 0, 255), anchor='bottomleft')
 
     def __init__(self):
         self.config = json_load('config.json', default={
@@ -301,23 +307,46 @@ class AutoInspection:
             self.adj_button.disable()
             self.predict_button.disable()
             self.frame_dict = {}
+            self.model_dict = {}
             self.mark_dict = {}
         else:
             self.adj_button.enable()
             self.predict_button.enable()
             json_data = json_load(os.path.join('data', self.model_name, 'frames pos.json'))
             self.frame_dict = json_data['frames']
+            self.model_dict = json_data['models']
             self.mark_dict = json_data['marks']
             for name, frame in self.frame_dict.items():
                 frame['color_rect'] = (255, 220, 0)
                 frame['width_rect'] = 2
+                frame['highest_score_name'] = ''
+                frame['highest_score_percent'] = ''
+                if not frame.get('frame_name'):
+                    frame['frame_name'] = name
             for name, frame in self.mark_dict.items():
-                print(frame)
                 frame['color_rect'] = (200, 20, 100)
                 frame['width_rect'] = 1
                 frame['xy'] = np.array(frame['xywh'][:2])
                 frame['wh'] = np.array(frame['xywh'][2:])
                 frame['xywh_around'] = np.concatenate((frame['xy'], frame['wh'] * frame['k']))
+            for name, model in self.model_dict.items():
+                try:
+                    model['model'] = models.load_model(fr'data/{self.model_name}/model/{name}.h5')
+                except Exception as e:
+                    print(f'{YELLOW}Error load model.h5.\n'
+                          f'file error data/{self.model_name}/model/{name}.h5{ENDC}')
+                    print(PINK, e, ENDC, sep='')
+                # try:
+                model.update(json_load(fr'data/{self.model_name}/model/{name}.json'))
+                pprint(model)
+                if model['model_class_names'] != model['class_names']:
+                    print(f'{YELLOW}class_names       = {model['class_names']}')
+                    print(f'model_class_names = {model['model_class_names']}{ENDC}')
+                # except Exception as e:
+                #     print(f'{YELLOW}function "load_model" error.\n'
+                #           f'file error data/{self.model_name}/model/{name}.json{ENDC}')
+                #     print(PINK, e, ENDC, sep='')
+
             config = json_load(os.path.join('data', self.model_name, 'model_config.json'))
             if config.get(self.config['resolution']):
                 for k, v in config[self.config['resolution']].items():
@@ -325,6 +354,38 @@ class AutoInspection:
                         self.scale_factor = v
                     elif k == 'img_offset':
                         self.img_offset = np.array(v)
+
+    def predict(self):
+        wh_ = np.array(self.np_img.shape[1::-1])
+        print(self.model_dict)
+        for name, frame in self.frame_dict.items():
+            if self.model_dict[frame['model_used']].get('model'):  # มีไฟล์ model.h5
+                model = self.model_dict[frame['model_used']]['model']
+                model_class_names = self.model_dict[frame['model_used']]['model_class_names']
+                print(model)
+                xywh = frame['xywh']
+                img_crop = crop_img(self.np_img, xywh)
+                img_crop = cv2.cvtColor(img_crop, cv2.COLOR_BGR2RGB)
+                img_array = img_crop[np.newaxis, :]
+                predictions = model.predict_on_batch(img_array)
+
+                predictions_score_list = predictions[0]  # [ -6.520611   8.118368 -21.86103   22.21528 ]
+                exp_x = [1.2 ** x for x in predictions_score_list]
+                percent_score_list = [round(x * 100 / sum(exp_x)) for x in exp_x]
+                highest_score_number = np.argmax(predictions_score_list)  # 3
+
+                highest_score_name = model_class_names[highest_score_number]
+                highest_score_percent = percent_score_list[highest_score_number]
+
+                frame['highest_score_name'] = highest_score_name
+                frame['highest_score_percent'] = highest_score_percent
+
+                if highest_score_name == 'ok':
+                    frame['color_rect'] = (0, 255, 0)
+                    frame['width_rect'] = 2
+                else:
+                    frame['color_rect'] = (255, 0, 0)
+                    frame['width_rect'] = 3
 
     def panel0_setup(self):
         rect = Rect(10, 10, 50, 26) if self.config['resolution'] == '1920x1080' else Rect(10, 5, 50, 26)
@@ -384,6 +445,11 @@ class AutoInspection:
                                 "img_offset": self.img_offset.tolist()
                             }
                         })
+                    if event.text == 'save mark':
+                        for name, mark in self.mark_dict.items():
+                            xywh = mark['xywh']
+                            img = crop_img(self.np_img, xywh)
+                            cv2.imwrite(os.path.join('data', self.model_name, f'{name}.png'), img)
 
         t = f'pos: {pg.mouse.get_pos()} '
         t += 'panel1' if self.panel1_rect.collidepoint(pg.mouse.get_pos()) else ''
@@ -499,14 +565,22 @@ class AutoInspection:
                     rect = Rect(1360, 130, 440, 500) \
                         if self.config['resolution'] == '1920x1080' \
                         else Rect(200, 50, 400, 400)
+
+                    if self.model_name == '-':
+                        initial_file_path = 'data'
+                    else:
+                        initial_file_path = os.path.join('data', self.model_name)
+
                     self.file_dialog = UIFileDialog(rect, self.manager, 'Load Image...',
-                                                    initial_file_path='data',
+                                                    initial_file_path=initial_file_path,
                                                     allow_picking_directories=True,
                                                     allow_existing_files_only=True,
                                                     allowed_suffixes={".png", ".jpg"})
                 if event.ui_element == self.adj_button:
                     print(self.mark_dict)
                     self.np_img = adj_image(self.np_img, self.model_name, self.mark_dict)
+                if event.ui_element == self.predict_button:
+                    self.predict()
             if event.type == UI_FILE_DIALOG_PATH_PICKED:
                 if '.png' in event.text:
                     print(event.text)

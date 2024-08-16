@@ -1,8 +1,10 @@
-[
-    "black",
-    "nopart",
-    "white",
-    "wrongpart",
-    "wrongpolarity",
-    "yellow"
-]
+{
+    "model_class_names": [
+        "black",
+        "nopart",
+        "white",
+        "wrongpart",
+        "wrongpolarity",
+        "yellow"
+    ]
+}

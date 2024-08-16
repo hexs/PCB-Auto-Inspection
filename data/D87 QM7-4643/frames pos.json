@@ -1,0 +1,949 @@
+{
+  "frames": {
+    "C902": {
+      "xywh": [
+        0.44209165006705664,
+        0.7720960101233542,
+        0.03937621832358679,
+        0.0566528066528067
+      ],
+      "model_used": "C902",
+      "res_show": {
+        "OK": [
+          "ok"
+        ],
+        "No part": [
+          "nopart"
+        ],
+        "Wrong part": [
+          "wrongpart"
+        ],
+        "Wrong polarity": [
+          "wrongpolarity"
+        ]
+      }
+    },
+    "J1002": {
+      "xywh": [
+        0.4797150053302145,
+        0.7396137682661122,
+        0.02339181286549713,
+        0.02494802494802495
+      ],
+      "model_used": "J1002",
+      "res_show": {
+        "OK": [
+          "ok"
+        ],
+        "No part": [
+          "nopart"
+        ],
+        "Wrong part": [
+          "wrongpart"
+        ],
+        "Wrong polarity": [
+          "wrongpolarity"
+        ]
+      }
+    },
+    "J1001": {
+      "xywh": [
+        0.4767910287220274,
+        0.6912704730478171,
+        0.01754385964912286,
+        0.042619542619542594
+      ],
+      "model_used": "J1001",
+      "res_show": {
+        "OK": [
+          "ok"
+        ],
+        "No part": [
+          "nopart"
+        ],
+        "Wrong part": [
+          "wrongpart"
+        ],
+        "Wrong polarity": [
+          "wrongpolarity"
+        ]
+      }
+    },
+    "J461": {
+      "xywh": [
+        0.4764011651742691,
+        0.6346284945308386,
+        0.019884563840155956,
+        0.03118936243936244
+      ],
+      "model_used": "J461",
+      "res_show": {
+        "OK": [
+          "ok"
+        ],
+        "No part": [
+          "nopart"
+        ],
+        "Wrong part": [
+          "wrongpart"
+        ],
+        "Wrong polarity": [
+          "wrongpolarity"
+        ]
+      }
+    },
+    "J741": {
+      "xywh": [
+        0.47718089226978566,
+        0.5969422505945945,
+        0.020665813840155957,
+        0.03794178794178793
+      ],
+      "model_used": "J741",
+      "res_show": {
+        "OK": [
+          "ok"
+        ],
+        "No part": [
+          "nopart"
+        ],
+        "Wrong part": [
+          "wrongpart"
+        ],
+        "Wrong polarity": [
+          "wrongpolarity"
+        ]
+      }
+    },
+    "J721": {
+      "xywh": [
+        0.47737582404366485,
+        0.5506844543367985,
+        0.01949622319688108,
+        0.04937629937629928
+      ],
+      "model_used": "J721",
+      "res_show": {
+        "OK": [
+          "ok"
+        ],
+        "No part": [
+          "nopart"
+        ],
+        "Wrong part": [
+          "wrongpart"
+        ],
+        "Wrong polarity": [
+          "wrongpolarity"
+        ]
+      }
+    },
+    "J821": {
+      "xywh": [
+        0.46139141858557514,
+        0.5083269526042966,
+        0.017933723196881135,
+        0.030147695772695774
+      ],
+      "model_used": "J821",
+      "res_show": {
+        "OK": [
+          "ok"
+        ],
+        "No part": [
+          "nopart"
+        ],
+        "Wrong part": [
+          "wrongpart"
+        ],
+        "Wrong polarity": [
+          "wrongpolarity"
+        ]
+      }
+    },
+    "J811": {
+      "xywh": [
+        0.47678950581754387,
+        0.421266574918919,
+        0.020668859649122805,
+        0.038981288981289
+      ],
+      "model_used": "J811",
+      "res_show": {
+        "OK": [
+          "ok"
+        ],
+        "No part": [
+          "nopart"
+        ],
+        "Wrong part": [
+          "wrongpart"
+        ],
+        "Wrong polarity": [
+          "wrongpolarity"
+        ]
+      }
+    },
+    "J851": {
+      "xywh": [
+        0.4764011651742691,
+        0.3838445374968816,
+        0.01988608674463941,
+        0.03378594941094943
+      ],
+      "model_used": "J851",
+      "res_show": {
+        "OK": [
+          "ok"
+        ],
+        "No part": [
+          "nopart"
+        ],
+        "Wrong part": [
+          "wrongpart"
+        ],
+        "Wrong polarity": [
+          "wrongpolarity"
+        ]
+      }
+    },
+    "J831": {
+      "xywh": [
+        0.47757075581754393,
+        0.2660452478225918,
+        0.018325109649122807,
+        0.037428534303534336
+      ],
+      "model_used": "J831",
+      "res_show": {
+        "OK": [
+          "ok"
+        ],
+        "No part": [
+          "nopart"
+        ],
+        "Wrong part": [
+          "wrongpart"
+        ],
+        "Wrong polarity": [
+          "wrongpolarity"
+        ]
+      }
+    },
+    "J921": {
+      "xywh": [
+        0.26824256812680813,
+        0.20071032705349515,
+        0.025119099177132953,
+        0.024613662622761413
+      ],
+      "model_used": "J921",
+      "res_show": {
+        "OK": [
+          "ok"
+        ],
+        "No part": [
+          "nopart"
+        ],
+        "Wrong part": [
+          "wrongpart"
+        ],
+        "Wrong polarity": [
+          "wrongpolarity"
+        ]
+      }
+    },
+    "J861": {
+      "xywh": [
+        0.3057684072776208,
+        0.200565461974401,
+        0.0474576271186441,
+        0.026462538917344583
+      ],
+      "model_used": "J861",
+      "res_show": {
+        "OK": [
+          "ok"
+        ],
+        "No part": [
+          "nopart"
+        ],
+        "Wrong part": [
+          "wrongpart"
+        ],
+        "Wrong polarity": [
+          "wrongpolarity"
+        ]
+      }
+    },
+    "J1007": {
+      "xywh": [
+        0.2432728211194287,
+        0.20116805311631122,
+        0.023502824858757043,
+        0.02437920558401125
+      ],
+      "model_used": "J1007",
+      "res_show": {
+        "OK": [
+          "ok"
+        ],
+        "No part": [
+          "nopart"
+        ],
+        "Wrong part": [
+          "wrongpart"
+        ],
+        "Wrong polarity": [
+          "wrongpolarity"
+        ]
+      }
+    },
+    "J1021": {
+      "xywh": [
+        0.21637045530021964,
+        0.2002770342351221,
+        0.03161899717514125,
+        0.025119576679722793
+      ],
+      "model_used": "J1021",
+      "res_show": {
+        "OK": [
+          "ok"
+        ],
+        "No part": [
+          "nopart"
+        ],
+        "Wrong part": [
+          "wrongpart"
+        ],
+        "Wrong polarity": [
+          "wrongpolarity"
+        ]
+      }
+    },
+    "J1301": {
+      "xywh": [
+        0.14780230558270552,
+        0.20101740533083365,
+        0.04971751412429379,
+        0.02511957667972282
+      ],
+      "model_used": "J1301",
+      "res_show": {
+        "OK": [
+          "ok"
+        ],
+        "No part": [
+          "nopart"
+        ],
+        "Wrong part": [
+          "wrongpart"
+        ],
+        "Wrong polarity": [
+          "wrongpolarity"
+        ]
+      }
+    },
+    "C1014": {
+      "xywh": [
+        0.3724432256612715,
+        0.5965834724527349,
+        0.02367590319186247,
+        0.028765201122544437
+      ],
+      "model_used": "C1014",
+      "res_show": {
+        "OK": [
+          "ok"
+        ],
+        "No part": [
+          "nopart"
+        ],
+        "Wrong part": [
+          "wrongpart"
+        ],
+        "Wrong polarity": [
+          "wrongpolarity"
+        ]
+      }
+    },
+    "C1016": {
+      "xywh": [
+        0.3937753788531341,
+        0.596700404164615,
+        0.022272886706418804,
+        0.02853133769878391
+      ],
+      "model_used": "C1016",
+      "res_show": {
+        "OK": [
+          "ok"
+        ],
+        "No part": [
+          "nopart"
+        ],
+        "Wrong part": [
+          "wrongpart"
+        ],
+        "Wrong polarity": [
+          "wrongpolarity"
+        ]
+      }
+    },
+    "C1015": {
+      "xywh": [
+        0.372618602721952,
+        0.6366588934068975,
+        0.023675903191862524,
+        0.03282565481758655
+      ],
+      "model_used": "C1015",
+      "res_show": {
+        "OK": [
+          "ok"
+        ],
+        "No part": [
+          "nopart"
+        ],
+        "Wrong part": [
+          "wrongpart"
+        ],
+        "Wrong polarity": [
+          "wrongpolarity"
+        ]
+      }
+    },
+    "J901": {
+      "xywh": [
+        0.3875177061067293,
+        0.7586508251187778,
+        0.019690185461241683,
+        0.06884062207670723
+      ],
+      "model_used": "J901",
+      "res_show": {
+        "OK": [
+          "ok"
+        ],
+        "No part": [
+          "nopart"
+        ],
+        "Wrong part": [
+          "wrongpart"
+        ],
+        "Wrong polarity": [
+          "wrongpolarity"
+        ]
+      }
+    },
+    "RL1501": {
+      "xywh": [
+        0.19233098434243606,
+        0.6598435285799565,
+        0.05033321641529287,
+        0.03695042095416279
+      ],
+      "model_used": "RL1501",
+      "res_show": {
+        "OK": [
+          "ok"
+        ],
+        "No part": [
+          "nopart"
+        ],
+        "Wrong part": [
+          "wrongpart"
+        ],
+        "Wrong polarity": [
+          "wrongpolarity"
+        ]
+      }
+    },
+    "L1053": {
+      "xywh": [
+        0.14410229265530874,
+        0.7162046137062428,
+        0.020327845492809533,
+        0.03133769878391013
+      ],
+      "model_used": "L1053",
+      "res_show": {
+        "OK": [
+          "ok"
+        ],
+        "No part": [
+          "nopart"
+        ],
+        "Wrong part": [
+          "wrongpart"
+        ],
+        "Wrong polarity": [
+          "wrongpolarity"
+        ]
+      }
+    },
+    "L1502": {
+      "xywh": [
+        0.14418998118564896,
+        0.6831450954648958,
+        0.02015246843212907,
+        0.027702096975366467
+      ],
+      "model_used": "L1502",
+      "res_show": {
+        "OK": [
+          "ok"
+        ],
+        "No part": [
+          "nopart"
+        ],
+        "Wrong part": [
+          "wrongpart"
+        ],
+        "Wrong polarity": [
+          "wrongpolarity"
+        ]
+      }
+    },
+    "J1501": {
+      "xywh": [
+        0.09850425687838835,
+        0.7611911665593765,
+        0.060855840056120644,
+        0.06594948550046775
+      ],
+      "model_used": "J1501",
+      "res_show": {
+        "OK": [
+          "ok"
+        ],
+        "No part": [
+          "nopart"
+        ],
+        "Wrong part": [
+          "wrongpart"
+        ],
+        "Wrong polarity": [
+          "wrongpolarity"
+        ]
+      }
+    },
+    "J1502": {
+      "xywh": [
+        0.0980658142266872,
+        0.6804235098708826,
+        0.06173272535952297,
+        0.06407857811038353
+      ],
+      "model_used": "J1502",
+      "res_show": {
+        "OK": [
+          "ok"
+        ],
+        "No part": [
+          "nopart"
+        ],
+        "Wrong part": [
+          "wrongpart"
+        ],
+        "Wrong polarity": [
+          "wrongpolarity"
+        ]
+      }
+    },
+    "J1201": {
+      "xywh": [
+        0.10683466726071036,
+        0.5890676866716309,
+        0.08277797264117855,
+        0.06828811973807303
+      ],
+      "model_used": "J1201",
+      "res_show": {
+        "OK": [
+          "ok"
+        ],
+        "No part": [
+          "nopart"
+        ],
+        "Wrong part": [
+          "wrongpart"
+        ],
+        "Wrong polarity": [
+          "wrongpolarity"
+        ]
+      }
+    },
+    "C1502": {
+      "xywh": [
+        0.2942862581672225,
+        0.7167720711862661,
+        0.023783488244942586,
+        0.027759296390813003
+      ],
+      "model_used": "C1502",
+      "res_show": {
+        "OK": [
+          "ok"
+        ],
+        "No part": [
+          "nopart"
+        ],
+        "Wrong part": [
+          "wrongpart"
+        ],
+        "Wrong polarity": [
+          "wrongpolarity"
+        ]
+      }
+    },
+    "C1501": {
+      "xywh": [
+        0.2947941347391197,
+        0.7417447288603455,
+        0.025892735101148125,
+        0.025415451452181277
+      ],
+      "model_used": "C1501",
+      "res_show": {
+        "OK": [
+          "ok"
+        ],
+        "No part": [
+          "nopart"
+        ],
+        "Wrong part": [
+          "wrongpart"
+        ],
+        "Wrong polarity": [
+          "wrongpolarity"
+        ]
+      }
+    },
+    "C1582": {
+      "xywh": [
+        0.207159156608994,
+        0.7658572425315084,
+        0.022689994532531427,
+        0.03353991979584403
+      ],
+      "model_used": "C1582",
+      "res_show": {
+        "OK": [
+          "ok"
+        ],
+        "No part": [
+          "nopart"
+        ],
+        "Wrong part": [
+          "wrongpart"
+        ],
+        "Wrong polarity": [
+          "wrongpolarity"
+        ]
+      }
+    },
+    "C1581": {
+      "xywh": [
+        0.19204715893266808,
+        0.7537218068771154,
+        0.020582029114270095,
+        0.03249825312917725
+      ],
+      "model_used": "C1581",
+      "res_show": {
+        "OK": [
+          "ok"
+        ],
+        "No part": [
+          "nopart"
+        ],
+        "Wrong part": [
+          "wrongpart"
+        ],
+        "Wrong polarity": [
+          "wrongpolarity"
+        ]
+      }
+    },
+    "J701": {
+      "xywh": [
+        0.10571072082207861,
+        0.4988393155833986,
+        0.056565160745742804,
+        0.05572468024014616
+      ],
+      "model_used": "J701",
+      "res_show": {
+        "OK": [
+          "ok"
+        ],
+        "No part": [
+          "nopart"
+        ],
+        "Wrong part": [
+          "wrongpart"
+        ],
+        "Wrong polarity": [
+          "wrongpolarity"
+        ]
+      }
+    },
+    "J1302": {
+      "xywh": [
+        0.103125,
+        0.3067708333333333,
+        0.02109375,
+        0.06666666666666667
+      ],
+      "model_used": "J1302",
+      "res_show": {
+        "OK": [
+          "ok"
+        ],
+        "No part": [
+          "nopart"
+        ],
+        "Wrong part": [
+          "wrongpart"
+        ],
+        "Wrong polarity": [
+          "wrongpolarity"
+        ]
+      }
+    }
+  },
+  "models": {
+    "C902": {
+      "class_names": [
+        "ok",
+        "nopart",
+        "wrongpolarity"
+      ]
+    },
+    "J1002": {
+      "class_names": [
+        "ok",
+        "nopart",
+        "wrongpolarity"
+      ]
+    },
+    "J1001": {
+      "class_names": [
+        "ok",
+        "nopart",
+        "wrongpart",
+        "wrongpolarity"
+      ]
+    },
+    "J461": {
+      "class_names": [
+        "ok",
+        "nopart",
+        "wrongpolarity"
+      ]
+    },
+    "J741": {
+      "class_names": [
+        "ok",
+        "nopart",
+        "wrongpart"
+      ]
+    },
+    "J721": {
+      "class_names": [
+        "ok",
+        "nopart",
+        "wrongpart",
+        "wrongpolarity"
+      ]
+    },
+    "J821": {
+      "class_names": [
+        "ok",
+        "nopart",
+        "wrongpolarity"
+      ]
+    },
+    "J811": {
+      "class_names": [
+        "ok",
+        "nopart",
+        "wrongpart"
+      ]
+    },
+    "J851": {
+      "class_names": [
+        "ok",
+        "nopart",
+        "wrongpart",
+        "wrongpolarity"
+      ]
+    },
+    "J831": {
+      "class_names": [
+        "ok",
+        "nopart",
+        "wrongpolarity"
+      ]
+    },
+    "J921": {
+      "class_names": [
+        "ok",
+        "nopart",
+        "wrongpolarity"
+      ]
+    },
+    "J861": {
+      "class_names": [
+        "ok",
+        "nopart",
+        "wrongpolarity"
+      ]
+    },
+    "J1007": {
+      "class_names": [
+        "ok",
+        "nopart",
+        "wrongpolarity"
+      ]
+    },
+    "J1021": {
+      "class_names": [
+        "ok",
+        "nopart"
+      ]
+    },
+    "J1301": {
+      "class_names": [
+        "ok",
+        "nopart",
+        "wrongpolarity"
+      ]
+    },
+    "C1014": {
+      "class_names": [
+        "ok",
+        "nopart",
+        "wrongpolarity"
+      ]
+    },
+    "C1016": {
+      "class_names": [
+        "ok",
+        "nopart",
+        "wrongpolarity"
+      ]
+    },
+    "C1015": {
+      "class_names": [
+        "ok",
+        "nopart",
+        "wrongpolarity"
+      ]
+    },
+    "J901": {
+      "class_names": [
+        "ok",
+        "nopart",
+        "wrongpolarity"
+      ]
+    },
+    "RL1501": {
+      "class_names": [
+        "ok",
+        "nopart"
+      ]
+    },
+    "L1053": {
+      "class_names": [
+        "ok",
+        "nopart",
+        "wrongpolarity"
+      ]
+    },
+    "L1502": {
+      "class_names": [
+        "ok",
+        "nopart",
+        "wrongpolarity"
+      ]
+    },
+    "J1501": {
+      "class_names": [
+        "ok",
+        "nopart"
+      ]
+    },
+    "J1502": {
+      "class_names": [
+        "ok",
+        "nopart"
+      ]
+    },
+    "J1201": {
+      "class_names": [
+        "ok",
+        "nopart"
+      ]
+    },
+    "C1502": {
+      "class_names": [
+        "ok",
+        "nopart"
+      ]
+    },
+    "C1501": {
+      "class_names": [
+        "ok",
+        "nopart"
+      ]
+    },
+    "C1582": {
+      "class_names": [
+        "ok",
+        "nopart"
+      ]
+    },
+    "C1581": {
+      "class_names": [
+        "ok",
+        "nopart"
+      ]
+    },
+    "J701": {
+      "class_names": [
+        "ok",
+        "nopart"
+      ]
+    },
+    "J1302": {
+      "class_names": [
+        "ok",
+        "nopart",
+        "wrongpolarity"
+      ]
+    }
+  },
+  "marks": {
+    "m1": {
+      "xywh": [
+        0.1242,
+        0.2277,
+        0.005,
+        0.0065
+      ],
+      "k": 10
+    },
+    "m2": {
+      "xywh": [
+        0.4037,
+        0.7569,
+        0.005,
+        0.0065
+      ],
+      "k": 10
+    }
+  }
+}
