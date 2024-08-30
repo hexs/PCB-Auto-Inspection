@@ -281,6 +281,7 @@ class AutoInspection:
             'resolution': '1920x1080',
             'model_name': '-',
             'fullscreen': True,
+            'url_image': 'http://192.168.225.137:2000/image?source=video_capture&id=0',
         })
         json_update('config.json', self.config)
         if self.config['resolution'] == '1920x1080':
@@ -557,7 +558,7 @@ class AutoInspection:
             if event.type == UI_BUTTON_PRESSED:
                 if event.ui_element == self.capture_button:
                     self.auto_cap_button.set_text('AutoCapture')
-                    self.get_surface_form_url('http://192.168.225.137:2000/image?source=video_capture&id=0')
+                    self.get_surface_form_url(self.config['url_image'])
                 if event.ui_element == self.auto_cap_button:
                     self.auto_cap_button.set_text('AutoCapture' if self.auto_cap_button.text == 'Stop' else 'Stop')
                 if event.ui_element == self.load_button:
@@ -587,7 +588,7 @@ class AutoInspection:
                     self.np_img = cv2.imread(event.text)
 
         if self.auto_cap_button.text == 'Stop':
-            self.get_surface_form_url('http://192.168.225.137:2000/image?source=video_capture&id=0')
+            self.get_surface_form_url(self.config['url_image'])
 
     def setup_ui(self):
         self.panel0_setup()
