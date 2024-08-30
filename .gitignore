@@ -9,3 +9,4 @@ data/*/log_img
 data/*/log_img_original
 
 config.json
+log.txt
