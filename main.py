@@ -15,6 +15,7 @@ from adj_image import adj_image
 from manage_json_files import json_load, json_dump, json_update
 from keras import models
 from constant import *
+from pygame_function import puttext
 from training import crop_img
 
 
@@ -589,6 +590,12 @@ class AutoInspection:
 
         if self.auto_cap_button.text == 'Stop':
             self.get_surface_form_url(self.config['url_image'])
+
+        # show status ok ng
+        # puttext(self.panel2_surface, '--', (100, 100), 300, (255, 250, 255), (50, 50, 50))
+        # puttext(self.panel2_surface, 'OK', (100, 100), 200, (10, 230, 40), (50, 50, 50))
+        # puttext(self.panel2_surface, 'NG', (100, 100), 200, (240, 38, 50), (50, 50, 50))
+        # puttext(self.panel2_surface, 'Wait', (100, 100), 200, (240, 240, 50), (50, 50, 50))
 
     def setup_ui(self):
         self.panel0_setup()
