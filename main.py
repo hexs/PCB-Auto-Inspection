@@ -9,13 +9,13 @@ from pygame import Rect, Surface, mouse, MOUSEBUTTONDOWN
 import pygame_gui
 from pygame_gui import UIManager, UI_FILE_DIALOG_PATH_PICKED, UI_BUTTON_PRESSED, UI_DROP_DOWN_MENU_CHANGED, \
     UI_SELECTION_LIST_NEW_SELECTION
-from pygame_gui.elements import UIWindow, UIPanel, UILabel, UIButton, UIDropDownMenu, UISelectionList
+from pygame_gui.elements import UIWindow, UIPanel, UILabel, UIButton, UIDropDownMenu, UISelectionList, UIImage
 from pygame_gui.windows import UIFileDialog
 from adj_image import adj_image
 from manage_json_files import json_load, json_dump, json_update
 from keras import models
 from constant import *
-from pygame_function import puttext
+from pygame_function import putText
 from training import crop_img
 
 
@@ -223,12 +223,6 @@ class AutoInspection:
             self.np_img = np.full((500, 500, 3), [0, 0, 230], dtype=np.uint8)  # Red image on error
         self.get_surface_form_np(self.np_img)
 
-    def put_text(self, surface, text, font, xy, color, color2=(255, 255, 255), anchor='center'):
-        text_surface = font.render(text, True, color, color2)
-        text_rect = text_surface.get_rect()
-        setattr(text_rect, anchor, xy)
-        surface.blit(text_surface, text_rect)
-
     def show_rects_to_surface(self, frame_dict):
         for k, v in frame_dict.items():
             xywh = np.array(v.get('xywh'))
@@ -259,7 +253,6 @@ class AutoInspection:
 
                 pg.draw.rect(self.scaled_img_surface, (200, 255, 0), rect, 1)
 
-        font = pg.font.Font(None, 16)
         for k, v in frame_dict.items():
             xywh = np.array(v.get('xywh'))
             xy = xywh[:2]
@@ -271,8 +264,8 @@ class AutoInspection:
 
             text = f"{k}"
             if v.get('highest_score_name'):
-                text += f" {v['highest_score_name']} {v['highest_score_percent']}"
-            self.put_text(self.scaled_img_surface, text, font, rect.topleft, (0, 0, 255), anchor='bottomleft')
+                text += f"\n{v['highest_score_name']} {v['highest_score_percent']}"
+            putText(self.scaled_img_surface, text, rect.topleft, 16, (0, 0, 255), (255, 255, 255), anchor='bottomleft')
 
     def __init__(self):
         self.config = json_load('config.json', default={
@@ -304,6 +297,45 @@ class AutoInspection:
         self.setup_ui()
         self.change_model()
 
+    def reset_frame(self):
+        for name, frame in self.frame_dict.items():
+            frame['color_rect'] = (255, 220, 0)
+            frame['width_rect'] = 2
+            frame['highest_score_name'] = ''
+            frame['highest_score_percent'] = ''
+            if not frame.get('frame_name'):
+                frame['frame_name'] = name
+        self.set_text_as_res_surface('-')
+        self.setup_NG_details()
+
+    def set_text_as_res_surface(self, text):
+        self.res_surface.fill((230, 230, 200))
+        if text == 'OK':
+            color = (0, 255, 0)
+        elif text == 'NG':
+            color = (255, 0, 0)
+        elif text == 'Wait':
+            color = (255, 255, 0)
+        else:
+            color = (0, 0, 0)
+        if self.config['resolution'] == '1920x1080':
+            putText(self.res_surface, text, (300 / 2, 150 / 2 + 5), 130, color, anchor='center',
+                    font='font/M_PLUS_Rounded_1c/MPLUSRounded1c-Medium.ttf')
+        else:
+            putText(self.res_surface, text, (150 / 2, 80 / 2 + 5), 60, color, anchor='center',
+                    font='font/M_PLUS_Rounded_1c/MPLUSRounded1c-Medium.ttf')
+        self.surface_image.set_image(self.res_surface)
+
+    def setup_NG_details(self):
+        size_font = 6 if self.config['resolution'] == '1920x1080' else 4
+        formatted_text = ""
+        for k, v in self.frame_dict.items():
+            if v.get('highest_score_name') in ['', 'OK']:
+                continue
+            text = f"{k} {v['highest_score_name']} {v['highest_score_percent']}"
+            formatted_text += f"<font color='#FF0000' size={size_font}>{text}</font><br>"
+        self.text_box.set_text(formatted_text)
+
     def change_model(self):
         if self.model_name == '-':
             self.adj_button.disable()
@@ -318,13 +350,7 @@ class AutoInspection:
             self.frame_dict = json_data['frames']
             self.model_dict = json_data['models']
             self.mark_dict = json_data['marks']
-            for name, frame in self.frame_dict.items():
-                frame['color_rect'] = (255, 220, 0)
-                frame['width_rect'] = 2
-                frame['highest_score_name'] = ''
-                frame['highest_score_percent'] = ''
-                if not frame.get('frame_name'):
-                    frame['frame_name'] = name
+            self.reset_frame()
             for name, frame in self.mark_dict.items():
                 frame['color_rect'] = (200, 20, 100)
                 frame['width_rect'] = 1
@@ -356,15 +382,21 @@ class AutoInspection:
                         self.scale_factor = v
                     elif k == 'img_offset':
                         self.img_offset = np.array(v)
+        self.set_text_as_res_surface('-')
+        self.setup_NG_details()
 
     def predict(self):
+        self.set_text_as_res_surface('Wait')
+        self.manager.draw_ui(self.display)
+        pg.display.update()
+
+        res_surface_text = 'OK'
         wh_ = np.array(self.np_img.shape[1::-1])
         print(self.model_dict)
         for name, frame in self.frame_dict.items():
             if self.model_dict[frame['model_used']].get('model'):  # มีไฟล์ model.h5
                 model = self.model_dict[frame['model_used']]['model']
                 model_class_names = self.model_dict[frame['model_used']]['model_class_names']
-                print(model)
                 xywh = frame['xywh']
                 img_crop = crop_img(self.np_img, xywh)
                 img_crop = cv2.cvtColor(img_crop, cv2.COLOR_BGR2RGB)
@@ -379,22 +411,30 @@ class AutoInspection:
                 highest_score_name = model_class_names[highest_score_number]
                 highest_score_percent = percent_score_list[highest_score_number]
 
+                for k, v in frame['res_show'].items():
+                    if highest_score_name in v:
+                        highest_score_name = k
+
                 frame['highest_score_name'] = highest_score_name
                 frame['highest_score_percent'] = highest_score_percent
 
-                if highest_score_name == 'ok':
+                if highest_score_name == 'OK':
                     frame['color_rect'] = (0, 255, 0)
                     frame['width_rect'] = 2
                 else:
                     frame['color_rect'] = (255, 0, 0)
                     frame['width_rect'] = 3
+                    res_surface_text = 'NG'
+
+        self.set_text_as_res_surface(res_surface_text)
+        self.setup_NG_details()
 
     def panel0_setup(self):
         rect = Rect(10, 10, 50, 26) if self.config['resolution'] == '1920x1080' else Rect(10, 5, 50, 26)
         model_label = UILabel(rect, f'model:', self.manager)
         os.makedirs('data', exist_ok=True)
         model_data = os.listdir('data') + ['-']
-        rect = Rect(10, 5, 300, 30) if self.config['resolution'] == '1920x1080' else Rect(10, 0, 300, 30)
+        rect = Rect(10, 5, 300, 30) if self.config['resolution'] == '1920x1080' else Rect(10, 0, 200, 30)
         self.model_data_dropdown = UIDropDownMenu(model_data, '-', rect, self.manager, anchors={
             'left_target': model_label})
         rect = Rect(-50, 0, 50, 40) if self.config['resolution'] == '1920x1080' else Rect(-40, 0, 40, 30)
@@ -516,50 +556,72 @@ class AutoInspection:
                                  ((self.panel1_rect.size - self.img_size_vector) / 2 + self.img_offset).tolist())
 
     def panel2_setup(self):
-        self.panel2_rect = Rect(1347, 40, 1920 - 1347, 1010) \
+        self.panel2_up_rect = Rect(1347, 40, 1920 - 1347, 90) \
+            if self.config['resolution'] == '1920x1080' \
+            else Rect(600, 30, 200, 30)
+        self.panel2_up = UIPanel(self.panel2_up_rect, manager=self.manager)
+
+        self.panel2_rect = Rect(1347, 40 + 87, 1920 - 1347, 1010 - 87) \
             if self.config['resolution'] == '1920x1080' \
             else Rect(600, 30, 200, 430)
-        self.panel2_surface = Surface(self.panel2_rect.size)
+        self.panel2 = UIPanel(self.panel2_rect, manager=self.manager)
 
         if self.config['resolution'] == '1920x1080':
-            self.capture_button = UIButton(Rect(1357, 50, 100, 50), 'Capture', self.manager, )
-            self.auto_cap_button = UIButton(Rect(1357, 0, 100, 20), 'AutoCapture', self.manager, anchors={
+            self.capture_button = UIButton(Rect(10, 10, 100, 50), 'Capture', container=self.panel2_up, )
+            self.auto_cap_button = UIButton(Rect(10, 0, 100, 20), 'AutoCapture', container=self.panel2_up, anchors={
                 'top_target': self.capture_button
             })
-            self.load_button = UIButton(Rect(10, 50, 100, 70), 'Load Image', self.manager, anchors={
+            self.load_button = UIButton(Rect(10, 10, 100, 70), 'Load Image', container=self.panel2_up, anchors={
                 'left_target': self.capture_button
             })
-            self.adj_button = UIButton(Rect(10, 50, 100, 70), 'Adj Image', self.manager, anchors={
+            self.adj_button = UIButton(Rect(10, 10, 100, 70), 'Adj Image', container=self.panel2_up, anchors={
                 'left_target': self.load_button
             })
-            self.predict_button = UIButton(Rect(10, 50, 100, 70), 'Predict', self.manager, anchors={
+            self.predict_button = UIButton(Rect(10, 10, 100, 70), 'Predict', container=self.panel2_up, anchors={
                 'left_target': self.adj_button
             })
         else:
-            self.capture_button = UIButton(Rect(605, 35, 60, 50), 'Capture', self.manager, )
-            self.auto_cap_button = UIButton(Rect(605, 0, 60, 20), 'Auto', self.manager, anchors={
-                'top_target': self.capture_button
-            })
-            self.load_button = UIButton(Rect(5, 35, 60, 70), 'Load Image', self.manager, anchors={
+            self.capture_button = UIButton(Rect(350, 0, 60, 30), 'Capture', manager=self.manager, )
+            self.auto_cap_button = UIButton(Rect(0, 0, 40, 30), 'Auto', manager=self.manager, anchors={
                 'left_target': self.capture_button
             })
-            self.adj_button = UIButton(Rect(5, 35, 60, 35), 'Adj Image', self.manager, anchors={
+            self.load_button = UIButton(Rect(10, 0, 100, 30), 'Load Image', manager=self.manager, anchors={
+                'left_target': self.auto_cap_button
+            })
+            self.adj_button = UIButton(Rect(10, 0, 70, 30), 'Adj Image', manager=self.manager, anchors={
                 'left_target': self.load_button
             })
-            self.predict_button = UIButton(Rect(5, 0, 60, 35), 'Predict', self.manager, anchors={
-                'left_target': self.load_button, 'top_target': self.adj_button
+            self.predict_button = UIButton(Rect(0, 0, 70, 30), 'Predict', manager=self.manager, anchors={
+                'left_target': self.adj_button,
             })
         self.file_dialog = None
         self.adj_button.disable()
         self.predict_button.disable()
 
+        self.res_surface = Surface((300, 150) if self.config['resolution'] == '1920x1080' else (150, 80))
+        self.surface_image = UIImage(
+            relative_rect=Rect(((self.panel2_rect.w - self.res_surface.get_rect().w) / 2, 15),
+                               self.res_surface.get_rect().size),
+            image_surface=self.res_surface,
+            container=self.panel2
+        )
+
+        # Create a UITextBox inside the panel
+        self.text_box = pygame_gui.elements.UITextBox(
+            html_text="",
+            relative_rect=Rect((10, 180), (550, 550)) if self.config['resolution'] == '1920x1080' else Rect((5, 100),
+                                                                                                            (200, 300)),
+            container=self.panel2
+        )
+
     def panel2_update(self, events):
-        self.panel2_surface.fill((100, 100, 100))
+        # self.panel2_surface.fill((100, 100, 100))
         for event in events:
             if event.type == UI_BUTTON_PRESSED:
                 if event.ui_element == self.capture_button:
                     self.auto_cap_button.set_text('AutoCapture')
                     self.get_surface_form_url(self.config['url_image'])
+                    self.reset_frame()
                 if event.ui_element == self.auto_cap_button:
                     self.auto_cap_button.set_text('AutoCapture' if self.auto_cap_button.text == 'Stop' else 'Stop')
                 if event.ui_element == self.load_button:
@@ -581,21 +643,17 @@ class AutoInspection:
                 if event.ui_element == self.adj_button:
                     print(self.mark_dict)
                     self.np_img = adj_image(self.np_img, self.model_name, self.mark_dict)
+                    self.reset_frame()
                 if event.ui_element == self.predict_button:
                     self.predict()
             if event.type == UI_FILE_DIALOG_PATH_PICKED:
                 if '.png' in event.text:
                     print(event.text)
                     self.np_img = cv2.imread(event.text)
+                    self.reset_frame()
 
         if self.auto_cap_button.text == 'Stop':
             self.get_surface_form_url(self.config['url_image'])
-
-        # show status ok ng
-        # puttext(self.panel2_surface, '--', (100, 100), 300, (255, 250, 255), (50, 50, 50))
-        # puttext(self.panel2_surface, 'OK', (100, 100), 200, (10, 230, 40), (50, 50, 50))
-        # puttext(self.panel2_surface, 'NG', (100, 100), 200, (240, 38, 50), (50, 50, 50))
-        # puttext(self.panel2_surface, 'Wait', (100, 100), 200, (240, 240, 50), (50, 50, 50))
 
     def setup_ui(self):
         self.panel0_setup()
@@ -627,7 +685,7 @@ class AutoInspection:
             self.handle_events()
 
             self.display.blit(self.panel1_surface, self.panel1_rect.topleft)
-            self.display.blit(self.panel2_surface, self.panel2_rect.topleft)
+            # self.display.blit(self.panel2_surface, self.panel2_rect.topleft)
 
             self.manager.update(time_delta)
             self.manager.draw_ui(self.display)

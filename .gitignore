@@ -8,5 +8,6 @@ data/*/img_frame
 data/*/log_img
 data/*/log_img_original
 
+test.py
 config.json
 log.txt
