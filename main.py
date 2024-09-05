@@ -1,21 +1,14 @@
+from pygame_function import *
+from constant import *
 import json
 import os
 import urllib.request
 from pprint import pprint
 import numpy as np
 import cv2
-import pygame as pg
-from pygame import Rect, Surface, mouse, MOUSEBUTTONDOWN
-import pygame_gui
-from pygame_gui import UIManager, UI_FILE_DIALOG_PATH_PICKED, UI_BUTTON_PRESSED, UI_DROP_DOWN_MENU_CHANGED, \
-    UI_SELECTION_LIST_NEW_SELECTION
-from pygame_gui.elements import UIWindow, UIPanel, UILabel, UIButton, UIDropDownMenu, UISelectionList, UIImage
-from pygame_gui.windows import UIFileDialog
 from adj_image import adj_image
 from manage_json_files import json_load, json_dump, json_update
 from keras import models
-from constant import *
-from pygame_function import putText
 from training import crop_img
 
 
@@ -297,6 +290,9 @@ class AutoInspection:
         self.setup_ui()
         self.change_model()
 
+        self.pass_n = 0
+        self.fail_n = 0
+
     def reset_frame(self):
         for name, frame in self.frame_dict.items():
             frame['color_rect'] = (255, 220, 0)
@@ -305,26 +301,8 @@ class AutoInspection:
             frame['highest_score_percent'] = ''
             if not frame.get('frame_name'):
                 frame['frame_name'] = name
-        self.set_text_as_res_surface('-')
+        self.res_PG_Image.update_text('res', text='-', color=(0, 0, 0))
         self.setup_NG_details()
-
-    def set_text_as_res_surface(self, text):
-        self.res_surface.fill((230, 230, 200))
-        if text == 'OK':
-            color = (0, 255, 0)
-        elif text == 'NG':
-            color = (255, 0, 0)
-        elif text == 'Wait':
-            color = (255, 255, 0)
-        else:
-            color = (0, 0, 0)
-        if self.config['resolution'] == '1920x1080':
-            putText(self.res_surface, text, (300 / 2, 150 / 2 + 5), 130, color, anchor='center',
-                    font='font/M_PLUS_Rounded_1c/MPLUSRounded1c-Medium.ttf')
-        else:
-            putText(self.res_surface, text, (150 / 2, 80 / 2 + 5), 60, color, anchor='center',
-                    font='font/M_PLUS_Rounded_1c/MPLUSRounded1c-Medium.ttf')
-        self.surface_image.set_image(self.res_surface)
 
     def setup_NG_details(self):
         size_font = 6 if self.config['resolution'] == '1920x1080' else 4
@@ -335,6 +313,15 @@ class AutoInspection:
             text = f"{k} {v['highest_score_name']} {v['highest_score_percent']}"
             formatted_text += f"<font color='#FF0000' size={size_font}>{text}</font><br>"
         self.text_box.set_text(formatted_text)
+
+    def update_status(self):
+        self.setup_NG_details()
+        self.passrate_PG_Image.update_text('Pass', text=f': {self.pass_n}')
+        self.passrate_PG_Image.update_text('Fail', text=f': {self.fail_n}')
+        passrate = '-'
+        if self.pass_n or self.fail_n:
+            passrate = f'{self.pass_n / (self.pass_n + self.fail_n) * 100: .2f}'
+        self.passrate_PG_Image.update_text('Pass rate', text=f': {passrate}%')
 
     def change_model(self):
         if self.model_name == '-':
@@ -382,11 +369,14 @@ class AutoInspection:
                         self.scale_factor = v
                     elif k == 'img_offset':
                         self.img_offset = np.array(v)
-        self.set_text_as_res_surface('-')
+            self.pass_n = self.fail_n = 0
+            self.update_status()
+
+        self.res_PG_Image.update_text('res', text='-')
         self.setup_NG_details()
 
     def predict(self):
-        self.set_text_as_res_surface('Wait')
+        self.res_PG_Image.update_text('res', text='Wait', color=(255, 255, 0))
         self.manager.draw_ui(self.display)
         pg.display.update()
 
@@ -426,8 +416,13 @@ class AutoInspection:
                     frame['width_rect'] = 3
                     res_surface_text = 'NG'
 
-        self.set_text_as_res_surface(res_surface_text)
-        self.setup_NG_details()
+        if res_surface_text == 'OK':
+            self.pass_n += 1
+            self.res_PG_Image.update_text('res', text='OK', color=(0, 255, 0))
+        else:
+            self.fail_n += 1
+            self.res_PG_Image.update_text('res', text='NG', color=(255, 0, 0))
+        self.update_status()
 
     def panel0_setup(self):
         rect = Rect(10, 10, 50, 26) if self.config['resolution'] == '1920x1080' else Rect(10, 5, 50, 26)
@@ -568,7 +563,7 @@ class AutoInspection:
 
         if self.config['resolution'] == '1920x1080':
             self.capture_button = UIButton(Rect(10, 10, 100, 50), 'Capture', container=self.panel2_up, )
-            self.auto_cap_button = UIButton(Rect(10, 0, 100, 20), 'AutoCapture', container=self.panel2_up, anchors={
+            self.auto_cap_button = UIButton(Rect(10, 0, 100, 20), 'Auto', container=self.panel2_up, anchors={
                 'top_target': self.capture_button
             })
             self.load_button = UIButton(Rect(10, 10, 100, 70), 'Load Image', container=self.panel2_up, anchors={
@@ -598,19 +593,101 @@ class AutoInspection:
         self.adj_button.disable()
         self.predict_button.disable()
 
-        self.res_surface = Surface((300, 150) if self.config['resolution'] == '1920x1080' else (150, 80))
-        self.surface_image = UIImage(
-            relative_rect=Rect(((self.panel2_rect.w - self.res_surface.get_rect().w) / 2, 15),
-                               self.res_surface.get_rect().size),
-            image_surface=self.res_surface,
+        if self.config['resolution'] == '1920x1080':
+            self.res_PG_Image = PG_Image(Rect((self.panel2_rect.w - 300) / 2, 15, 300, 150), (230, 230, 200),
+                                         container=self.panel2)
+            self.res_PG_Image.add_text(
+                'res', text='-',
+                xy=(300 / 2, 150 / 2 + 5),
+                color=(0, 0, 0),
+                font=pg.font.Font('font/M_PLUS_Rounded_1c/MPLUSRounded1c-Medium.ttf', 130),
+                anchor='center'
+            )
+
+
+        else:
+            self.res_PG_Image = PG_Image(Rect((self.panel2_rect.w - 150) / 2, 5, 150, 80), (230, 230, 200),
+                                         container=self.panel2)
+            self.res_PG_Image.add_text('res', text='-',
+                                       xy=(150 / 2, 80 / 2),
+                                       color=(0, 0, 0),
+                                       font=pg.font.Font('font/M_PLUS_Rounded_1c/MPLUSRounded1c-Medium.ttf', 50)
+                                       )
+        self.passrate_PG_Image = PG_Image(
+            Rect((self.panel2_rect.w - 550) / 2, 170, 550, 180) \
+                if self.config['resolution'] == '1920x1080' \
+                else Rect((self.panel2_rect.w - 190) / 2, 90, 190, 90),
+            (200, 230, 230),
             container=self.panel2
+        )
+
+        self.passrate_PG_Image.add_text(
+            'Pass_', text='Pass',
+            xy=(50, 10) if self.config['resolution'] == '1920x1080' else (10, 0),
+            color=(0, 255, 0),
+            font=pg.font.Font(
+                'font/M_PLUS_Rounded_1c/MPLUSRounded1c-Medium.ttf',
+                40 if self.config['resolution'] == '1920x1080' else 20,
+            ),
+            anchor='topleft'
+        )
+        self.passrate_PG_Image.add_text(
+            'Pass', text=': 0',
+            xy=(300, 10) if self.config['resolution'] == '1920x1080' else (110, 0),
+            color=(0, 255, 0),
+            font=pg.font.Font(
+                'font/M_PLUS_Rounded_1c/MPLUSRounded1c-Medium.ttf',
+                40 if self.config['resolution'] == '1920x1080' else 20,
+            ),
+            anchor='topleft'
+        )
+        self.passrate_PG_Image.add_text(
+            'Fail_', text='Fail',
+            xy=(50, 60) if self.config['resolution'] == '1920x1080' else (10, 30),
+            color=(255, 0, 0),
+            font=pg.font.Font(
+                'font/M_PLUS_Rounded_1c/MPLUSRounded1c-Medium.ttf',
+                40 if self.config['resolution'] == '1920x1080' else 20,
+            ),
+            anchor='topleft'
+        )
+        self.passrate_PG_Image.add_text(
+            'Fail', text=': 0',
+            xy=(300, 60) if self.config['resolution'] == '1920x1080' else (110, 30),
+            color=(255, 0, 0),
+            font=pg.font.Font(
+                'font/M_PLUS_Rounded_1c/MPLUSRounded1c-Medium.ttf',
+                40 if self.config['resolution'] == '1920x1080' else 20,
+            ),
+            anchor='topleft'
+        )
+        self.passrate_PG_Image.add_text(
+            'Pass rate_', text='Pass rate',
+            xy=(50, 110) if self.config['resolution'] == '1920x1080' else (10, 60),
+            color=(0, 0, 0),
+            font=pg.font.Font(
+                'font/M_PLUS_Rounded_1c/MPLUSRounded1c-Medium.ttf',
+                40 if self.config['resolution'] == '1920x1080' else 20,
+            ),
+            anchor='topleft'
+        )
+        self.passrate_PG_Image.add_text(
+            'Pass rate', text=': -%',
+            xy=(300, 110) if self.config['resolution'] == '1920x1080' else (110, 60),
+            color=(0, 0, 0),
+            font=pg.font.Font(
+                'font/M_PLUS_Rounded_1c/MPLUSRounded1c-Medium.ttf',
+                40 if self.config['resolution'] == '1920x1080' else 20,
+            ),
+            anchor='topleft'
         )
 
         # Create a UITextBox inside the panel
         self.text_box = pygame_gui.elements.UITextBox(
             html_text="",
-            relative_rect=Rect((10, 180), (550, 550)) if self.config['resolution'] == '1920x1080' else Rect((5, 100),
-                                                                                                            (200, 300)),
+            relative_rect=Rect(((self.panel2_rect.w - 550) / 2, 360), (550, 550)) \
+                if self.config['resolution'] == '1920x1080' \
+                else Rect(((self.panel2_rect.w - 190) / 2, 180), (190, 240)),
             container=self.panel2
         )
 
@@ -619,27 +696,22 @@ class AutoInspection:
         for event in events:
             if event.type == UI_BUTTON_PRESSED:
                 if event.ui_element == self.capture_button:
-                    self.auto_cap_button.set_text('AutoCapture')
+                    self.auto_cap_button.set_text('Auto')
                     self.get_surface_form_url(self.config['url_image'])
                     self.reset_frame()
                 if event.ui_element == self.auto_cap_button:
-                    self.auto_cap_button.set_text('AutoCapture' if self.auto_cap_button.text == 'Stop' else 'Stop')
+                    self.auto_cap_button.set_text('Auto' if self.auto_cap_button.text == 'Stop' else 'Stop')
                 if event.ui_element == self.load_button:
-                    self.auto_cap_button.set_text('AutoCapture')
-                    rect = Rect(1360, 130, 440, 500) \
-                        if self.config['resolution'] == '1920x1080' \
-                        else Rect(200, 50, 400, 400)
+                    self.auto_cap_button.set_text('Auto')
 
-                    if self.model_name == '-':
-                        initial_file_path = 'data'
-                    else:
-                        initial_file_path = os.path.join('data', self.model_name)
-
-                    self.file_dialog = UIFileDialog(rect, self.manager, 'Load Image...',
-                                                    initial_file_path=initial_file_path,
-                                                    allow_picking_directories=True,
-                                                    allow_existing_files_only=True,
-                                                    allowed_suffixes={".png", ".jpg"})
+                    self.file_dialog = UIFileDialog(
+                        Rect(1360, 130, 440, 500) if self.config['resolution'] == '1920x1080' \
+                            else Rect(200, 50, 400, 400),
+                        self.manager, 'Load Image...',
+                        initial_file_path='data' if self.model_name == '-' else os.path.join('data', self.model_name),
+                        allow_picking_directories=True,
+                        allow_existing_files_only=True,
+                        allowed_suffixes={".png", ".jpg"})
                 if event.ui_element == self.adj_button:
                     print(self.mark_dict)
                     self.np_img = adj_image(self.np_img, self.model_name, self.mark_dict)
@@ -685,7 +757,6 @@ class AutoInspection:
             self.handle_events()
 
             self.display.blit(self.panel1_surface, self.panel1_rect.topleft)
-            # self.display.blit(self.panel2_surface, self.panel2_rect.topleft)
 
             self.manager.update(time_delta)
             self.manager.draw_ui(self.display)
