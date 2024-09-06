@@ -16,12 +16,6 @@ def putText(surface, text, xy, font_size=32, color=(0, 0, 0), bg_color=None, anc
     setattr(text_rect, anchor, xy)
     surface.blit(text_surface, text_rect)
 
-def putText2(surface, text, xy, color=(0, 0, 0), bg_color=None, anchor='center', font=None,font_size=32):
-    font = pg.font.Font(None, font_size) if font is None else font
-    text_surface = font.render(text, True, color, bg_color, wraplength=0)
-    text_rect = text_surface.get_rect()
-    setattr(text_rect, anchor, xy)
-    surface.blit(text_surface, text_rect)
 
 
 class PG_Text:
@@ -81,7 +75,6 @@ class PG_Image:
 
 
 if __name__ == '__main__':
-
     pg.init()
     window_size = (800, 600)
     window_surface = pg.display.set_mode(window_size)
@@ -107,23 +100,17 @@ if __name__ == '__main__':
 
     while is_running:
         time_delta = clock.tick(60) / 1000.0
-
         for event in pg.event.get():
             if event.type == pg.QUIT:
                 is_running = False
-
             if event.type == pg.MOUSEBUTTONDOWN:
                 if event.button == 1:
                     click_count += 1
                     pg_image.update_text('t1', text=f"Clicked {click_count} times!")
-
             ui_manager.process_events(event)
 
         ui_manager.update(time_delta)
-
         window_surface.fill((255, 255, 255))
         ui_manager.draw_ui(window_surface)
-
         pg.display.update()
-
     pg.quit()

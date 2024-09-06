@@ -14,7 +14,8 @@ from training import crop_img
 
 class RightClick:
     def __init__(self, app, window_size):
-        self.options_list = {'1', }
+        self.app = app
+        self.options_list = set()
         self.selection = None
         self.window_size = np.array(window_size)
 
@@ -25,13 +26,14 @@ class RightClick:
         self.options_list = self.options_list - new_options_list
 
     def create_selection(self, mouse_pos, options_list):
-        selection_size = (200, 6 + 20 * len(self.options_list))
-        pos = np.minimum(mouse_pos, self.window_size - selection_size)
-        self.selection = UISelectionList(
-            Rect(pos, selection_size),
-            item_list=options_list,
-            manager=app.manager,
-        )
+        if len(options_list) > 0:
+            selection_size = (200, 6 + 20 * len(options_list))
+            pos = np.minimum(mouse_pos, self.window_size - selection_size)
+            self.selection = UISelectionList(
+                Rect(pos, selection_size),
+                item_list=options_list,
+                manager=self.app.manager,
+            )
 
     def kill(self):
         if self.selection:
@@ -50,11 +52,12 @@ class RightClick:
                         self.kill()
                 elif event.button == 3:  # Right mouse button
                     self.kill()
-                    if len(self.options_list) > 0:
-                        if app.scale_and_offset_label.get_abs_rect().collidepoint(mouse.get_pos()):
-                            self.create_selection(event.pos, {'save config', 'save mark'})
-                        else:
-                            self.create_selection(event.pos, self.options_list)
+                    if self.app.scale_and_offset_label.get_abs_rect().collidepoint(mouse.get_pos()):
+                        self.create_selection(event.pos, {'save config', 'save mark'})
+                    elif self.app.panel1_rect.collidepoint(mouse.get_pos()):
+                        self.create_selection(event.pos, {'zoom to fit'})
+                    else:
+                        self.create_selection(event.pos, self.options_list)
 
 
 class AutoInspection:
@@ -425,27 +428,29 @@ class AutoInspection:
         self.update_status()
 
     def panel0_setup(self):
-        rect = Rect(10, 10, 50, 26) if self.config['resolution'] == '1920x1080' else Rect(10, 5, 50, 26)
+        is_full_hd = self.config['resolution'] == '1920x1080'
+
+        rect = Rect(10, 10, 50, 26) if is_full_hd else Rect(10, 5, 50, 26)
         model_label = UILabel(rect, f'model:', self.manager)
         os.makedirs('data', exist_ok=True)
         model_data = os.listdir('data') + ['-']
-        rect = Rect(10, 5, 300, 30) if self.config['resolution'] == '1920x1080' else Rect(10, 0, 200, 30)
+        rect = Rect(10, 5, 300, 30) if is_full_hd else Rect(10, 0, 200, 30)
         self.model_data_dropdown = UIDropDownMenu(model_data, '-', rect, self.manager, anchors={
             'left_target': model_label})
-        rect = Rect(-50, 0, 50, 40) if self.config['resolution'] == '1920x1080' else Rect(-40, 0, 40, 30)
+        rect = Rect(-50, 0, 50, 40) if is_full_hd else Rect(-40, 0, 40, 30)
         self.close_button = UIButton(rect, f'X', self.manager, anchors={
             'top': 'top',
             'left': 'right',
             'bottom': 'top',
             'right': 'right'})
-        rect = Rect(10, -30, 50, 26) if self.config['resolution'] == '1920x1080' else Rect(10, -24, 50, 26)
+        rect = Rect(10, -30, 50, 26) if is_full_hd else Rect(10, -24, 50, 26)
         self.fps_label = UILabel(rect, '', self.manager, anchors={
             'top': 'bottom',
             'left': 'left',
             'bottom': 'bottom',
             'right': 'left'
         })
-        rect = Rect(10, -30, 170, 26) if self.config['resolution'] == '1920x1080' else Rect(10, -24, 170, 26)
+        rect = Rect(10, -30, 170, 26) if is_full_hd else Rect(10, -24, 170, 26)
         self.mouse_pos_label = UILabel(rect, '', self.manager, anchors={
             'top': 'bottom',
             'left': 'left',
@@ -453,7 +458,7 @@ class AutoInspection:
             'right': 'left',
             'left_target': self.fps_label
         })
-        rect = Rect(10, -30, 150, 26) if self.config['resolution'] == '1920x1080' else Rect(10, -24, 150, 26)
+        rect = Rect(10, -30, 150, 26) if is_full_hd else Rect(10, -24, 150, 26)
         self.scale_and_offset_label = UILabel(rect, '', self.manager, anchors={
             'top': 'bottom',
             'left': 'left',
@@ -488,6 +493,16 @@ class AutoInspection:
                             img = crop_img(self.np_img, xywh)
                             cv2.imwrite(os.path.join('data', self.model_name, f'{name}.png'), img)
 
+                    if event.text == 'zoom to fit':
+                        data = json_load(os.path.join('data', self.model_name, 'model_config.json'), {
+                            f"{self.config['resolution']}": {
+                                "scale_factor": 1,
+                                "img_offset": [0, 0]
+                            }
+                        })
+                        self.scale_factor = data[self.config['resolution']]['scale_factor']
+                        self.img_offset = np.array(data[self.config['resolution']]['img_offset'])
+
         t = f'pos: {pg.mouse.get_pos()} '
         t += 'panel1' if self.panel1_rect.collidepoint(pg.mouse.get_pos()) else ''
         t += 'panel2' if self.panel2_rect.collidepoint(pg.mouse.get_pos()) else ''
@@ -496,9 +511,8 @@ class AutoInspection:
         self.scale_and_offset_label.set_text(f'{round(self.scale_factor, 2)} {self.img_offset.astype(int)}')
 
     def panel1_setup(self):
-        self.panel1_rect = Rect(0, 40, 1347, 1010) \
-            if self.config['resolution'] == '1920x1080' \
-            else Rect(0, 30, 600, 430)
+        is_full_hd = self.config['resolution'] == '1920x1080'
+        self.panel1_rect = Rect(0, 40, 1347, 1010) if is_full_hd else Rect(0, 30, 600, 430)
         self.panel1_surface = Surface(self.panel1_rect.size)
 
         self.scale_factor = 1
@@ -551,17 +565,14 @@ class AutoInspection:
                                  ((self.panel1_rect.size - self.img_size_vector) / 2 + self.img_offset).tolist())
 
     def panel2_setup(self):
-        self.panel2_up_rect = Rect(1347, 40, 1920 - 1347, 90) \
-            if self.config['resolution'] == '1920x1080' \
-            else Rect(600, 30, 200, 30)
+        is_full_hd = self.config['resolution'] == '1920x1080'
+        self.panel2_up_rect = Rect(1347, 40, 573, 90) if is_full_hd else Rect(600, 30, 200, 30)
         self.panel2_up = UIPanel(self.panel2_up_rect, manager=self.manager)
 
-        self.panel2_rect = Rect(1347, 40 + 87, 1920 - 1347, 1010 - 87) \
-            if self.config['resolution'] == '1920x1080' \
-            else Rect(600, 30, 200, 430)
+        self.panel2_rect = Rect(1347, 127, 573, 923) if is_full_hd else Rect(600, 30, 200, 430)
         self.panel2 = UIPanel(self.panel2_rect, manager=self.manager)
 
-        if self.config['resolution'] == '1920x1080':
+        if is_full_hd:
             self.capture_button = UIButton(Rect(10, 10, 100, 50), 'Capture', container=self.panel2_up, )
             self.auto_cap_button = UIButton(Rect(10, 0, 100, 20), 'Auto', container=self.panel2_up, anchors={
                 'top_target': self.capture_button
@@ -593,7 +604,7 @@ class AutoInspection:
         self.adj_button.disable()
         self.predict_button.disable()
 
-        if self.config['resolution'] == '1920x1080':
+        if is_full_hd:
             self.res_PG_Image = PG_Image(Rect((self.panel2_rect.w - 300) / 2, 15, 300, 150), (230, 230, 200),
                                          container=self.panel2)
             self.res_PG_Image.add_text(
@@ -614,8 +625,7 @@ class AutoInspection:
                                        font=pg.font.Font('font/M_PLUS_Rounded_1c/MPLUSRounded1c-Medium.ttf', 50)
                                        )
         self.passrate_PG_Image = PG_Image(
-            Rect((self.panel2_rect.w - 550) / 2, 170, 550, 180) \
-                if self.config['resolution'] == '1920x1080' \
+            Rect((self.panel2_rect.w - 550) / 2, 170, 550, 180) if is_full_hd \
                 else Rect((self.panel2_rect.w - 190) / 2, 90, 190, 90),
             (200, 230, 230),
             container=self.panel2
@@ -623,21 +633,18 @@ class AutoInspection:
 
         self.passrate_PG_Image.add_text(
             'Pass_', text='Pass',
-            xy=(50, 10) if self.config['resolution'] == '1920x1080' else (10, 0),
+            xy=(50, 10) if is_full_hd else (10, 0),
             color=(0, 255, 0),
-            font=pg.font.Font(
-                'font/M_PLUS_Rounded_1c/MPLUSRounded1c-Medium.ttf',
-                40 if self.config['resolution'] == '1920x1080' else 20,
-            ),
+            font=pg.font.Font('font/M_PLUS_Rounded_1c/MPLUSRounded1c-Medium.ttf', 40 if is_full_hd else 20, ),
             anchor='topleft'
         )
         self.passrate_PG_Image.add_text(
             'Pass', text=': 0',
-            xy=(300, 10) if self.config['resolution'] == '1920x1080' else (110, 0),
+            xy=(300, 10) if is_full_hd else (110, 0),
             color=(0, 255, 0),
             font=pg.font.Font(
                 'font/M_PLUS_Rounded_1c/MPLUSRounded1c-Medium.ttf',
-                40 if self.config['resolution'] == '1920x1080' else 20,
+                40 if is_full_hd else 20,
             ),
             anchor='topleft'
         )
@@ -645,40 +652,28 @@ class AutoInspection:
             'Fail_', text='Fail',
             xy=(50, 60) if self.config['resolution'] == '1920x1080' else (10, 30),
             color=(255, 0, 0),
-            font=pg.font.Font(
-                'font/M_PLUS_Rounded_1c/MPLUSRounded1c-Medium.ttf',
-                40 if self.config['resolution'] == '1920x1080' else 20,
-            ),
+            font=pg.font.Font('font/M_PLUS_Rounded_1c/MPLUSRounded1c-Medium.ttf', 40 if is_full_hd else 20, ),
             anchor='topleft'
         )
         self.passrate_PG_Image.add_text(
             'Fail', text=': 0',
-            xy=(300, 60) if self.config['resolution'] == '1920x1080' else (110, 30),
+            xy=(300, 60) if is_full_hd else (110, 30),
             color=(255, 0, 0),
-            font=pg.font.Font(
-                'font/M_PLUS_Rounded_1c/MPLUSRounded1c-Medium.ttf',
-                40 if self.config['resolution'] == '1920x1080' else 20,
-            ),
+            font=pg.font.Font('font/M_PLUS_Rounded_1c/MPLUSRounded1c-Medium.ttf', 40 if is_full_hd else 20, ),
             anchor='topleft'
         )
         self.passrate_PG_Image.add_text(
             'Pass rate_', text='Pass rate',
-            xy=(50, 110) if self.config['resolution'] == '1920x1080' else (10, 60),
+            xy=(50, 110) if is_full_hd else (10, 60),
             color=(0, 0, 0),
-            font=pg.font.Font(
-                'font/M_PLUS_Rounded_1c/MPLUSRounded1c-Medium.ttf',
-                40 if self.config['resolution'] == '1920x1080' else 20,
-            ),
+            font=pg.font.Font('font/M_PLUS_Rounded_1c/MPLUSRounded1c-Medium.ttf', 40 if is_full_hd else 20, ),
             anchor='topleft'
         )
         self.passrate_PG_Image.add_text(
             'Pass rate', text=': -%',
-            xy=(300, 110) if self.config['resolution'] == '1920x1080' else (110, 60),
+            xy=(300, 110) if is_full_hd else (110, 60),
             color=(0, 0, 0),
-            font=pg.font.Font(
-                'font/M_PLUS_Rounded_1c/MPLUSRounded1c-Medium.ttf',
-                40 if self.config['resolution'] == '1920x1080' else 20,
-            ),
+            font=pg.font.Font('font/M_PLUS_Rounded_1c/MPLUSRounded1c-Medium.ttf', 40 if is_full_hd else 20, ),
             anchor='topleft'
         )
 
@@ -686,8 +681,7 @@ class AutoInspection:
         self.text_box = pygame_gui.elements.UITextBox(
             html_text="",
             relative_rect=Rect(((self.panel2_rect.w - 550) / 2, 360), (550, 550)) \
-                if self.config['resolution'] == '1920x1080' \
-                else Rect(((self.panel2_rect.w - 190) / 2, 180), (190, 240)),
+                if is_full_hd else Rect(((self.panel2_rect.w - 190) / 2, 180), (190, 240)),
             container=self.panel2
         )
 
