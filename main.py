@@ -1,15 +1,28 @@
-from pygame_function import *
-from constant import *
-import json
 import os
 import urllib.request
 from pprint import pprint
 import numpy as np
 import cv2
-from adj_image import adj_image
-from manage_json_files import json_load, json_dump, json_update
+import pygame as pg
+from pygame import Rect, Surface, mouse, MOUSEBUTTONDOWN
+import pygame_gui
+from pygame_gui import UIManager, UI_FILE_DIALOG_PATH_PICKED, UI_BUTTON_PRESSED, UI_DROP_DOWN_MENU_CHANGED, \
+    UI_SELECTION_LIST_NEW_SELECTION
+from pygame_gui.core import ObjectID
+from pygame_gui.elements import UIPanel, UILabel, UIButton, UIDropDownMenu, UISelectionList
+from pygame_gui.windows import UIFileDialog
 from keras import models
+
+from constant import *
+from adj_image import adj_image
+from manage_json_files import json_load, json_update
+from theme import theme
 from training import crop_img
+from TextBoxSurface import TextBoxSurface, gradient_surface
+from pygame_function import putText
+import os
+import urllib.request
+from pprint import pprint
 
 
 class RightClick:
@@ -27,7 +40,7 @@ class RightClick:
 
     def create_selection(self, mouse_pos, options_list):
         if len(options_list) > 0:
-            selection_size = (200, 6 + 20 * len(options_list))
+            selection_size = (200, 6 + 25 * len(options_list))
             pos = np.minimum(mouse_pos, self.window_size - selection_size)
             self.selection = UISelectionList(
                 Rect(pos, selection_size),
@@ -61,143 +74,6 @@ class RightClick:
 
 
 class AutoInspection:
-    def setup_theme(self):
-        self.theme = {
-            '#close_button': {
-                "colours": {
-                    "hovered_bg": "rgb(232,17,35)",
-                }
-            },
-            '@panel_window.#title_bar': {
-                "colours": {
-                    "normal_bg": "rgb(229,243,255)",
-                }
-            },
-            "button": {
-                "colours": {
-                    "normal_bg": "#F3F3F3",
-                    "hovered_bg": "rgb(229,243,255)",
-                    "disabled_bg": "#F3F3F3",
-                    "selected_bg": "rgb(204,232,255)",
-                    "active_bg": "rgb(204,232,255)",
-                    "normal_text": "#000",
-                    "hovered_text": "#000",
-                    "selected_text": "#000",
-                    "disabled_text": "#A6A6A6",
-                    "active_text": "#000",
-                    "normal_border": "#CCCCCC",
-                    "hovered_border": "#A6A6A6",
-                    "disabled_border": "#CCCCCC",
-                    "selected_border": "#A6A6A6",
-                    "active_border": "#0078D7",
-                    "normal_text_shadow": "#00000000",
-                    "hovered_text_shadow": "#00000000",
-                    "disabled_text_shadow": "#00000000",
-                    "selected_text_shadow": "#00000000",
-                    "active_text_shadow": "#00000000"
-                },
-                "misc": {
-                    "shape": "rounded_rectangle",
-                    "shape_corner_radius": "4",
-                    "border_width": "1",
-                    "shadow_width": "0",
-                    "tool_tip_delay": "1.0",
-                    "text_horiz_alignment": "center",
-                    "text_vert_alignment": "center",
-                    "text_horiz_alignment_padding": "10",
-                    "text_vert_alignment_padding": "5",
-                    "text_shadow_size": "0",
-                    "text_shadow_offset": "0,0",
-                    "state_transitions": {
-                        "normal_hovered": "0.2",
-                        "hovered_normal": "0.2"
-                    }
-                }
-            },
-            "label": {
-                "colours": {
-                    "normal_text": "#000",
-                },
-                "misc": {
-                    "text_horiz_alignment": "left"
-                }
-            },
-            "window": {
-                "colours": {
-                    "dark_bg": "#F9F9F9",
-                    "normal_border": "#888"
-                },
-
-                "misc": {
-                    "shape": "rounded_rectangle",
-                    #         "shape_corner_radius": "10",
-                    #         "border_width": "1",
-                    #         "shadow_width": "15",
-                    #         "title_bar_height": "20"
-                }
-            },
-            "panel": {
-                "colours": {
-                    "dark_bg": "#F9F9F9",
-                    "normal_border": "#888"
-                },
-            },
-            "selection_list": {
-                "colours": {
-                    "dark_bg": "#F9F9F9",
-                    "normal_border": "#999999"
-                },
-            },
-            "text_entry_line": {
-                "colours": {
-                    "dark_bg": "#fff",
-                    "normal_text": "#000",
-                    "text_cursor": "#000"
-                },
-            },
-
-            "horizontal_slider": {
-                "prototype": "#test_prototype_colours",
-
-                "colours": {
-                    "dark_bg": "rgb(240,240,240)"
-                },
-                "misc": {
-                    "shape": "rounded_rectangle",
-                    "shape_corner_radius": "10",
-                    "shadow_width": "2",
-                    "border_width": "1",
-                    "enable_arrow_buttons": "1"
-                }
-            },
-            "horizontal_slider.@arrow_button": {
-                "misc": {
-                    "shape": "rounded_rectangle",
-                    "shape_corner_radius": "8",
-                    "text_horiz_alignment_padding": "2"
-                }
-            },
-            "horizontal_slider.#sliding_button": {
-                "colours": {
-                    "normal_bg": "#F55",
-                    "hovered_bg": "#F00",
-                },
-                "misc": {
-                    "shape": "ellipse",
-                }
-            }
-        }
-        self.theme.update({
-            "drop_down_menu": {
-                "misc": {
-                    "shape": "rounded_rectangle",
-                    "shape_corner_radius": "4",
-                    "open_button_width": "0"
-                },
-            }
-        })
-        self.theme['@delete_button'] = self.theme['#close_button']
-        return self.theme
 
     def update_scaled_img_surface(self):
         self.scaled_img_surface = pg.transform.scale(self.img_surface, (
@@ -288,7 +164,7 @@ class AutoInspection:
         self.clock = pg.time.Clock()
 
         self.display = pg.display.set_mode(self.window_size.tolist(), pg.FULLSCREEN if self.config['fullscreen'] else 0)
-        self.manager = UIManager(self.display.get_size(), theme_path=self.setup_theme())
+        self.manager = UIManager(self.display.get_size(), theme_path=theme)
         self.right_click = RightClick(self, self.window_size.tolist())
         self.setup_ui()
         self.change_model()
@@ -304,7 +180,7 @@ class AutoInspection:
             frame['highest_score_percent'] = ''
             if not frame.get('frame_name'):
                 frame['frame_name'] = name
-        self.res_PG_Image.update_text('res', text='-', color=(0, 0, 0))
+        self.res_textbox.update_text('res', text='-', color=(0, 0, 0))
         self.setup_NG_details()
 
     def setup_NG_details(self):
@@ -319,12 +195,10 @@ class AutoInspection:
 
     def update_status(self):
         self.setup_NG_details()
-        self.passrate_PG_Image.update_text('Pass', text=f': {self.pass_n}')
-        self.passrate_PG_Image.update_text('Fail', text=f': {self.fail_n}')
-        passrate = '-'
-        if self.pass_n or self.fail_n:
-            passrate = f'{self.pass_n / (self.pass_n + self.fail_n) * 100: .2f}'
-        self.passrate_PG_Image.update_text('Pass rate', text=f': {passrate}%')
+        self.passrate_textbox.update_text('Pass', text=f': {self.pass_n}')
+        self.passrate_textbox.update_text('Fail', text=f': {self.fail_n}')
+        self.passrate_textbox.update_text('Pass rate', text=
+        f': {self.pass_n / (self.pass_n + self.fail_n) * 100:.2f}%' if self.pass_n or self.fail_n else ':  -')
 
     def change_model(self):
         if self.model_name == '-':
@@ -375,11 +249,11 @@ class AutoInspection:
             self.pass_n = self.fail_n = 0
             self.update_status()
 
-        self.res_PG_Image.update_text('res', text='-')
+        self.res_textbox.update_text('res', text='-')
         self.setup_NG_details()
 
     def predict(self):
-        self.res_PG_Image.update_text('res', text='Wait', color=(255, 255, 0))
+        self.res_textbox.update_text('res', text='Wait', color=(255, 255, 0))
         self.manager.draw_ui(self.display)
         pg.display.update()
 
@@ -421,59 +295,91 @@ class AutoInspection:
 
         if res_surface_text == 'OK':
             self.pass_n += 1
-            self.res_PG_Image.update_text('res', text='OK', color=(0, 255, 0))
+            self.res_textbox.update_text('res', text='OK', color=(0, 255, 0))
         else:
             self.fail_n += 1
-            self.res_PG_Image.update_text('res', text='NG', color=(255, 0, 0))
+            self.res_textbox.update_text('res', text='NG', color=(255, 0, 0))
         self.update_status()
 
     def panel0_setup(self):
         is_full_hd = self.config['resolution'] == '1920x1080'
-
-        rect = Rect(10, 10, 50, 26) if is_full_hd else Rect(10, 5, 50, 26)
-        model_label = UILabel(rect, f'model:', self.manager)
+        self.logo_button = UIButton(
+            Rect(5, 5, 30, 30) if is_full_hd else Rect(5, 5, 20, 20),
+            'DX', self.manager,
+            object_id=ObjectID(class_id='@logo_button', object_id='#logo_button'),
+        )
+        rect = Rect(15, 0, 60, 40) if is_full_hd else Rect(10, 0, 60, 30)
+        self.model_label = UILabel(
+            rect, f'Model:', self.manager,
+            object_id=ObjectID(class_id='@model_label', object_id='#model_label'),
+            anchors={
+                'top': 'top',
+                'left': 'left',
+                'bottom': 'top',
+                'right': 'left',
+                'left_target': self.logo_button}
+        )
         os.makedirs('data', exist_ok=True)
         model_data = os.listdir('data') + ['-']
         rect = Rect(10, 5, 300, 30) if is_full_hd else Rect(10, 0, 200, 30)
         self.model_data_dropdown = UIDropDownMenu(model_data, '-', rect, self.manager, anchors={
-            'left_target': model_label})
+            'left_target': self.model_label})
         rect = Rect(-50, 0, 50, 40) if is_full_hd else Rect(-40, 0, 40, 30)
-        self.close_button = UIButton(rect, f'X', self.manager, anchors={
-            'top': 'top',
-            'left': 'right',
-            'bottom': 'top',
-            'right': 'right'})
-        rect = Rect(10, -30, 50, 26) if is_full_hd else Rect(10, -24, 50, 26)
-        self.fps_label = UILabel(rect, '', self.manager, anchors={
+        self.close_button = UIButton(
+            rect, f'X', self.manager,
+            object_id=ObjectID(class_id='@close_button', object_id='#close_button'),
+            anchors={
+                'top': 'top',
+                'left': 'right',
+                'bottom': 'top',
+                'right': 'right'}
+        )
+        self.minimize_button = UIButton(
+            rect, f'—', self.manager,
+            object_id=ObjectID(class_id='@minimize_button', object_id='#minimize_button'),
+            anchors={
+                'top': 'top',
+                'left': 'right',
+                'bottom': 'top',
+                'right': 'right',
+                'right_target': self.close_button}
+        )
+
+        rect = Rect(10, -30, 100, 26) if is_full_hd else Rect(10, -24, 100, 26)
+        anchors = {
             'top': 'bottom',
             'left': 'left',
             'bottom': 'bottom',
             'right': 'left'
-        })
-        rect = Rect(10, -30, 170, 26) if is_full_hd else Rect(10, -24, 170, 26)
-        self.mouse_pos_label = UILabel(rect, '', self.manager, anchors={
-            'top': 'bottom',
-            'left': 'left',
-            'bottom': 'bottom',
-            'right': 'left',
-            'left_target': self.fps_label
-        })
-        rect = Rect(10, -30, 150, 26) if is_full_hd else Rect(10, -24, 150, 26)
-        self.scale_and_offset_label = UILabel(rect, '', self.manager, anchors={
-            'top': 'bottom',
-            'left': 'left',
-            'bottom': 'bottom',
-            'right': 'left',
-            'left_target': self.mouse_pos_label
-        })
+        }
+        self.fps_label = UILabel(rect, '', self.manager, anchors=anchors)
+        self.mouse_pos_label = UILabel(rect, '', self.manager, anchors=anchors | {'left_target': self.fps_label})
+        self.scale_and_offset_label = UILabel(rect, '', self.manager,
+                                              anchors=anchors | {'left_target': self.mouse_pos_label})
+        self.autoinspection_button = UIButton(
+            Rect(-150, -30, 150, 30), f'Auto Inspection 0.2.1', self.manager,
+            object_id=ObjectID(class_id='@auto_inspection', object_id='#auto_inspection_button'),
+            anchors={
+                'top': 'bottom',
+                'left': 'right',
+                'bottom': 'bottom',
+                'right': 'right'}
+        )
 
     def panel0_update(self, events):
+        is_full_hd = self.config['resolution'] == '1920x1080'
+        if is_full_hd:
+            self.display.blit(gradient_surface(Rect(0, 0, 720, 40), (150, 200, 255), (255, 250, 230)), (0, 0))
+            self.display.blit(gradient_surface(Rect(0, 0, 1200, 40), (255, 250, 230), (211, 229, 250)), (720, 0))
+
         for event in events:
             if event.type == UI_BUTTON_PRESSED:
                 if event.type == pg.QUIT:
                     self.is_running = False
                 if event.ui_element == self.close_button:
                     self.is_running = False
+                if event.ui_element == self.minimize_button:
+                    pg.display.iconify()
             if event.type == UI_DROP_DOWN_MENU_CHANGED:
                 self.model_name = self.model_data_dropdown.selected_option[0]
                 self.change_model()
@@ -503,9 +409,9 @@ class AutoInspection:
                         self.scale_factor = data[self.config['resolution']]['scale_factor']
                         self.img_offset = np.array(data[self.config['resolution']]['img_offset'])
 
-        t = f'pos: {pg.mouse.get_pos()} '
-        t += 'panel1' if self.panel1_rect.collidepoint(pg.mouse.get_pos()) else ''
-        t += 'panel2' if self.panel2_rect.collidepoint(pg.mouse.get_pos()) else ''
+        t = f'{pg.mouse.get_pos()}'
+        t += ' 1' if self.panel1_rect.collidepoint(pg.mouse.get_pos()) else ''
+        t += ' 2' if self.panel2_rect.collidepoint(pg.mouse.get_pos()) else ''
         self.fps_label.set_text(f'fps: {round(self.clock.get_fps())}')
         self.mouse_pos_label.set_text(t)
         self.scale_and_offset_label.set_text(f'{round(self.scale_factor, 2)} {self.img_offset.astype(int)}')
@@ -604,74 +510,62 @@ class AutoInspection:
         self.adj_button.disable()
         self.predict_button.disable()
 
-        if is_full_hd:
-            self.res_PG_Image = PG_Image(Rect((self.panel2_rect.w - 300) / 2, 15, 300, 150), (230, 230, 200),
-                                         container=self.panel2)
-            self.res_PG_Image.add_text(
-                'res', text='-',
-                xy=(300 / 2, 150 / 2 + 5),
-                color=(0, 0, 0),
-                font=pg.font.Font('font/M_PLUS_Rounded_1c/MPLUSRounded1c-Medium.ttf', 130),
-                anchor='center'
-            )
+        self.res_textbox = TextBoxSurface(
+            Rect((self.panel2_rect.w - 300) / 2, 12, 300, 150) if is_full_hd \
+                else Rect((self.panel2_rect.w - 150) / 2, 5, 150, 80),
+            (230, 230, 200), (230, 230, 255),
+            container=self.panel2,
+        )
+        self.res_textbox.add_text(
+            'res', text='-', color=(0, 0, 0),
+            font=pg.font.Font('font/M_PLUS_Rounded_1c/MPLUSRounded1c-Medium.ttf', 130 if is_full_hd else 50)
+        )
 
-
-        else:
-            self.res_PG_Image = PG_Image(Rect((self.panel2_rect.w - 150) / 2, 5, 150, 80), (230, 230, 200),
-                                         container=self.panel2)
-            self.res_PG_Image.add_text('res', text='-',
-                                       xy=(150 / 2, 80 / 2),
-                                       color=(0, 0, 0),
-                                       font=pg.font.Font('font/M_PLUS_Rounded_1c/MPLUSRounded1c-Medium.ttf', 50)
-                                       )
-        self.passrate_PG_Image = PG_Image(
+        self.passrate_textbox = TextBoxSurface(
             Rect((self.panel2_rect.w - 550) / 2, 170, 550, 180) if is_full_hd \
                 else Rect((self.panel2_rect.w - 190) / 2, 90, 190, 90),
-            (200, 230, 230),
+            (230, 230, 255), (230, 230, 200),
             container=self.panel2
         )
 
-        self.passrate_PG_Image.add_text(
-            'Pass_', text='Pass',
-            xy=(50, 10) if is_full_hd else (10, 0),
-            color=(0, 255, 0),
-            font=pg.font.Font('font/M_PLUS_Rounded_1c/MPLUSRounded1c-Medium.ttf', 40 if is_full_hd else 20, ),
+        self.passrate_textbox.add_text(
+            'Pass_', 'Pass',
+            (50, 10) if is_full_hd else (10, 0),
+            (0, 255, 0),
+            font=pg.font.Font('font/M_PLUS_Rounded_1c/MPLUSRounded1c-Medium.ttf', 40 if is_full_hd else 20),
             anchor='topleft'
         )
-        self.passrate_PG_Image.add_text(
+        self.passrate_textbox.add_text(
             'Pass', text=': 0',
-            xy=(300, 10) if is_full_hd else (110, 0),
+            xy=(300, 10) if is_full_hd else (100, 0),
             color=(0, 255, 0),
-            font=pg.font.Font(
-                'font/M_PLUS_Rounded_1c/MPLUSRounded1c-Medium.ttf',
-                40 if is_full_hd else 20,
-            ),
+            font=pg.font.Font('font/M_PLUS_Rounded_1c/MPLUSRounded1c-Medium.ttf', 40 if is_full_hd else 20),
             anchor='topleft'
         )
-        self.passrate_PG_Image.add_text(
+        self.passrate_textbox.add_text(
             'Fail_', text='Fail',
             xy=(50, 60) if self.config['resolution'] == '1920x1080' else (10, 30),
             color=(255, 0, 0),
-            font=pg.font.Font('font/M_PLUS_Rounded_1c/MPLUSRounded1c-Medium.ttf', 40 if is_full_hd else 20, ),
+            font=pg.font.Font('font/M_PLUS_Rounded_1c/MPLUSRounded1c-Medium.ttf', 40 if is_full_hd else 20),
             anchor='topleft'
         )
-        self.passrate_PG_Image.add_text(
+        self.passrate_textbox.add_text(
             'Fail', text=': 0',
-            xy=(300, 60) if is_full_hd else (110, 30),
+            xy=(300, 60) if is_full_hd else (100, 30),
             color=(255, 0, 0),
-            font=pg.font.Font('font/M_PLUS_Rounded_1c/MPLUSRounded1c-Medium.ttf', 40 if is_full_hd else 20, ),
+            font=pg.font.Font('font/M_PLUS_Rounded_1c/MPLUSRounded1c-Medium.ttf', 40 if is_full_hd else 20),
             anchor='topleft'
         )
-        self.passrate_PG_Image.add_text(
+        self.passrate_textbox.add_text(
             'Pass rate_', text='Pass rate',
             xy=(50, 110) if is_full_hd else (10, 60),
             color=(0, 0, 0),
-            font=pg.font.Font('font/M_PLUS_Rounded_1c/MPLUSRounded1c-Medium.ttf', 40 if is_full_hd else 20, ),
+            font=pg.font.Font('font/M_PLUS_Rounded_1c/MPLUSRounded1c-Medium.ttf', 40 if is_full_hd else 20),
             anchor='topleft'
         )
-        self.passrate_PG_Image.add_text(
+        self.passrate_textbox.add_text(
             'Pass rate', text=': -%',
-            xy=(300, 110) if is_full_hd else (110, 60),
+            xy=(300, 110) if is_full_hd else (100, 60),
             color=(0, 0, 0),
             font=pg.font.Font('font/M_PLUS_Rounded_1c/MPLUSRounded1c-Medium.ttf', 40 if is_full_hd else 20, ),
             anchor='topleft'
@@ -680,12 +574,13 @@ class AutoInspection:
         # Create a UITextBox inside the panel
         self.text_box = pygame_gui.elements.UITextBox(
             html_text="",
-            relative_rect=Rect(((self.panel2_rect.w - 550) / 2, 360), (550, 550)) \
-                if is_full_hd else Rect(((self.panel2_rect.w - 190) / 2, 180), (190, 240)),
+            relative_rect=Rect(((self.panel2_rect.w - 550) / 2, 357), (550, 555)) if is_full_hd \
+                else Rect((self.panel2_rect.w - 190) / 2, 180, 190, 240),
             container=self.panel2
         )
 
     def panel2_update(self, events):
+        is_full_hd = self.config['resolution'] == '1920x1080'
         # self.panel2_surface.fill((100, 100, 100))
         for event in events:
             if event.type == UI_BUTTON_PRESSED:
@@ -699,13 +594,12 @@ class AutoInspection:
                     self.auto_cap_button.set_text('Auto')
 
                     self.file_dialog = UIFileDialog(
-                        Rect(1360, 130, 440, 500) if self.config['resolution'] == '1920x1080' \
-                            else Rect(200, 50, 400, 400),
-                        self.manager, 'Load Image...',
-                        initial_file_path='data' if self.model_name == '-' else os.path.join('data', self.model_name),
+                        Rect(1360, 130, 440, 500) if is_full_hd else Rect(200, 50, 400, 400),
+                        self.manager, 'Load Image...', {".png", ".jpg"},
+                        'data' if self.model_name == '-' else os.path.join('data', self.model_name),
                         allow_picking_directories=True,
                         allow_existing_files_only=True,
-                        allowed_suffixes={".png", ".jpg"})
+                    )
                 if event.ui_element == self.adj_button:
                     print(self.mark_dict)
                     self.np_img = adj_image(self.np_img, self.model_name, self.mark_dict)
@@ -758,6 +652,10 @@ class AutoInspection:
             pg.display.update()
 
 
-if __name__ == "__main__":
+def main():
     app = AutoInspection()
     app.run()
+
+
+if __name__ == "__main__":
+    main()
