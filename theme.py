@@ -1,21 +1,6 @@
 theme = {}
-({
-    '@panel_window.#title_bar': {
-        "colours": {
-            "normal_bg": "rgb(229,243,255)",
-        }
-    },
-    "window": {
-        "colours": {
-            "dark_bg": "#F9F9F9",
-            "normal_border": "#888"
-        },
 
-        "misc": {
-            "shape": "rounded_rectangle"
-        }
-    }
-})
+# label
 theme.update({
     "label": {
         "colours": {
@@ -122,7 +107,7 @@ theme.update({
 
         },
     },
-    "#auto_inspection_button": {
+    "#buttom_bar": {
         "colours": {
             "normal_bg": "#0000",
             "hovered_bg": "#0000",
@@ -132,9 +117,10 @@ theme.update({
             "active_text": "#000"
         },
         "misc": {
-            "border_width": "0"
+            "shape": "rectangle",
+            "border_width": "0",
+            "shadow_width": "1"
         }
-
     }
 })
 
@@ -148,6 +134,7 @@ theme.update({
     }
 })
 
+# selection_list
 theme.update({
     "selection_list": {
         "colours": {
@@ -244,7 +231,7 @@ theme.update({
 theme.update({
     "text_box": {
         "colours": {
-            "dark_bg": "#EEE",
+            "dark_bg": "#ced1ff,#e9efc8,30",
             "selected_bg": "#00F",
             "normal_border": "rgb(130, 170, 255)",
         },
@@ -253,15 +240,23 @@ theme.update({
             "shape_corner_radius": "10",
             "border_width": "2"
         }
+    },
+    "passrate_textbox": {
+        "font":
+            {
+                "name": "Rounded Mplus 1c Medium",
+                "size": "50"
+            },
     }
+
 })
 
 # UISelectionList
 theme.update({
     "selection_list": {
         "colours": {
-            "dark_bg": "#FFF9",
-            "normal_border": "#999999"
+            "dark_bg": "#FFF",
+            "normal_border": "#999"
         },
         "misc": {
             "shape": "rounded_rectangle",
@@ -278,7 +273,7 @@ theme.update({
 theme.update({
     "window": {
         "colours": {
-            "dark_bg": "#FFFD",
+            "dark_bg": "#FFFF",
             "normal_border": "#999"
         },
 
@@ -338,7 +333,7 @@ theme.update({
     # UITextEntryLine
     "file_dialog.#file_path_text_line": {
         "colours": {
-            "dark_bg": "#FF85",
+            "dark_bg": "#FF93",
             "selected_bg": "#0078d7",
             "normal_text": "#000",
             "selected_text": "#FFF",
@@ -346,7 +341,7 @@ theme.update({
     # UISelectionList
     "#file_dialog.#file_display_list": {
         "colours": {
-            "dark_bg": "#FFF5",
+            "dark_bg": "#FFF",
             "normal_border": "#999"
         },
         "misc": {
@@ -358,13 +353,21 @@ theme.update({
     # UIButton
     "#file_dialog.#file_display_list.#directory_list_item": {
         "colours": {
-            "normal_bg": "#FF9A",
+            "normal_bg": "#FF93",
+        },
+        "misc": {
+            "shape": "rounded_rectangle",
+            "shape_corner_radius": "5",
         }
     },
     # UIButton
     "file_dialog.#file_display_list.#file_list_item": {
         "colours": {
-            "normal_bg": "#FFCA",
+            "normal_bg": "#FFF0",
+        },
+        "misc": {
+            "shape": "rounded_rectangle",
+            "shape_corner_radius": "5",
         }
     }
 })

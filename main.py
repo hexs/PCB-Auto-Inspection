@@ -19,7 +19,7 @@ from manage_json_files import json_load, json_update
 from theme import theme
 from training import crop_img
 from TextBoxSurface import TextBoxSurface, gradient_surface
-from pygame_function import putText
+from pygame_function import putText, UITextBox
 import os
 import urllib.request
 from pprint import pprint
@@ -63,14 +63,14 @@ class RightClick:
                 if event.button == 1:  # Left mouse button
                     if self.selection and not self.selection.get_relative_rect().collidepoint(event.pos):
                         self.kill()
-                elif event.button == 3:  # Right mouse button
-                    self.kill()
-                    if self.app.scale_and_offset_label.get_abs_rect().collidepoint(mouse.get_pos()):
-                        self.create_selection(event.pos, {'save config', 'save mark'})
-                    elif self.app.panel1_rect.collidepoint(mouse.get_pos()):
-                        self.create_selection(event.pos, {'zoom to fit'})
-                    else:
-                        self.create_selection(event.pos, self.options_list)
+                # elif event.button == 3:  # Right mouse button
+                #     self.kill()
+                #     if self.app.scale_and_offset_button.get_abs_rect().collidepoint(mouse.get_pos()):
+                #         self.create_selection(event.pos, {'save config', 'save mark'})
+                #     elif self.app.panel1_rect.collidepoint(mouse.get_pos()):
+                #         self.create_selection(event.pos, {'zoom to fit'})
+                #     else:
+                #         self.create_selection(event.pos, self.options_list)
 
 
 class AutoInspection:
@@ -172,6 +172,9 @@ class AutoInspection:
         self.pass_n = 0
         self.fail_n = 0
 
+    def set_name_for_debug(self):
+        ...
+
     def reset_frame(self):
         for name, frame in self.frame_dict.items():
             frame['color_rect'] = (255, 220, 0)
@@ -184,21 +187,28 @@ class AutoInspection:
         self.setup_NG_details()
 
     def setup_NG_details(self):
-        size_font = 6 if self.config['resolution'] == '1920x1080' else 4
+        size_font = 25 if self.config['resolution'] == '1920x1080' else 13
         formatted_text = ""
         for k, v in self.frame_dict.items():
             if v.get('highest_score_name') in ['', 'OK']:
                 continue
             text = f"{k} {v['highest_score_name']} {v['highest_score_percent']}"
             formatted_text += f"<font color='#FF0000' size={size_font}>{text}</font><br>"
-        self.text_box.set_text(formatted_text)
+        self.res_NG_text_box.set_text(formatted_text)
 
     def update_status(self):
         self.setup_NG_details()
         self.passrate_textbox.update_text('Pass', text=f': {self.pass_n}')
         self.passrate_textbox.update_text('Fail', text=f': {self.fail_n}')
         self.passrate_textbox.update_text('Pass rate', text=
-        f': {self.pass_n / (self.pass_n + self.fail_n) * 100:.2f}%' if self.pass_n or self.fail_n else ':  -')
+        f': {self.pass_n / (self.pass_n + self.fail_n) * 100:.2f}%' if self.pass_n or self.fail_n else ': -%')
+        # size_font = 32 if self.config['resolution'] == '1920x1080' else 20
+        # pass_rate = f'{self.pass_n / (self.pass_n + self.fail_n) * 100:.2f}%' if self.pass_n or self.fail_n else '-'
+        # self.passrate_textbox.set_text(
+        #     f"<font color='#00CC00' size={size_font}>Pass        : {self.pass_n}</font><br>"
+        #     f"<font color='#FF0000' size={size_font}>Fail          : {self.fail_n}</font><br>"
+        #     f"<font color='#000000' size={size_font}>Pass rate: {pass_rate}</font>"
+        # )
 
     def change_model(self):
         if self.model_name == '-':
@@ -303,6 +313,7 @@ class AutoInspection:
 
     def panel0_setup(self):
         is_full_hd = self.config['resolution'] == '1920x1080'
+        # top left
         self.logo_button = UIButton(
             Rect(5, 5, 30, 30) if is_full_hd else Rect(5, 5, 20, 20),
             'DX', self.manager,
@@ -312,58 +323,57 @@ class AutoInspection:
         self.model_label = UILabel(
             rect, f'Model:', self.manager,
             object_id=ObjectID(class_id='@model_label', object_id='#model_label'),
-            anchors={
-                'top': 'top',
-                'left': 'left',
-                'bottom': 'top',
-                'right': 'left',
-                'left_target': self.logo_button}
+            anchors={'left_target': self.logo_button}
         )
         os.makedirs('data', exist_ok=True)
         model_data = os.listdir('data') + ['-']
         rect = Rect(10, 5, 300, 30) if is_full_hd else Rect(10, 0, 200, 30)
-        self.model_data_dropdown = UIDropDownMenu(model_data, '-', rect, self.manager, anchors={
-            'left_target': self.model_label})
+        self.model_data_dropdown = UIDropDownMenu(
+            model_data, '-', rect, self.manager,
+            anchors={'left_target': self.model_label})
+
+        # top right
+        anchors = {'top': 'top', 'left': 'right', 'bottom': 'top', 'right': 'right'}
         rect = Rect(-50, 0, 50, 40) if is_full_hd else Rect(-40, 0, 40, 30)
         self.close_button = UIButton(
             rect, f'X', self.manager,
             object_id=ObjectID(class_id='@close_button', object_id='#close_button'),
-            anchors={
-                'top': 'top',
-                'left': 'right',
-                'bottom': 'top',
-                'right': 'right'}
+            anchors=anchors
         )
         self.minimize_button = UIButton(
             rect, f'—', self.manager,
             object_id=ObjectID(class_id='@minimize_button', object_id='#minimize_button'),
-            anchors={
-                'top': 'top',
-                'left': 'right',
-                'bottom': 'top',
-                'right': 'right',
-                'right_target': self.close_button}
+            anchors=anchors | {'right_target': self.close_button}
         )
 
-        rect = Rect(10, -30, 100, 26) if is_full_hd else Rect(10, -24, 100, 26)
-        anchors = {
-            'top': 'bottom',
-            'left': 'left',
-            'bottom': 'bottom',
-            'right': 'left'
-        }
-        self.fps_label = UILabel(rect, '', self.manager, anchors=anchors)
-        self.mouse_pos_label = UILabel(rect, '', self.manager, anchors=anchors | {'left_target': self.fps_label})
-        self.scale_and_offset_label = UILabel(rect, '', self.manager,
-                                              anchors=anchors | {'left_target': self.mouse_pos_label})
+        # bottom left
+        anchors = {'top': 'bottom', 'left': 'left', 'bottom': 'bottom', 'right': 'left'}
+        self.fps_button = UIButton(
+            Rect(20, -30, 80, 30) if is_full_hd else Rect(20, -20, 80, 20),
+            '', self.manager,
+            object_id=ObjectID(class_id='@fps_button', object_id='#buttom_bar'),
+            anchors=anchors
+        )
+        self.mouse_pos_button = UIButton(
+            Rect(0, -30, 110, 30) if is_full_hd else Rect(0, -20, 110, 20),
+            '', self.manager,
+            object_id=ObjectID(class_id='@mouse_pos_button', object_id='#buttom_bar'),
+            anchors=anchors | {'left_target': self.fps_button}
+        )
+        self.scale_and_offset_button = UIButton(
+            Rect(0, -30, 120, 30) if is_full_hd else Rect(0, -20, 120, 20),
+            '', self.manager,
+            object_id=ObjectID(class_id='@scale_and_offset_button', object_id='#buttom_bar'),
+            anchors=anchors | {'left_target': self.mouse_pos_button}
+        )
+
+        # bottom left
+        anchors = {'top': 'bottom', 'left': 'right', 'bottom': 'bottom', 'right': 'right'}
         self.autoinspection_button = UIButton(
-            Rect(-150, -30, 150, 30), f'Auto Inspection 0.2.1', self.manager,
-            object_id=ObjectID(class_id='@auto_inspection', object_id='#auto_inspection_button'),
-            anchors={
-                'top': 'bottom',
-                'left': 'right',
-                'bottom': 'bottom',
-                'right': 'right'}
+            Rect(-150, -30, 150, 30) if is_full_hd else Rect(-150, -20, 150, 20),
+            f'Auto Inspection 0.2.1', self.manager,
+            object_id=ObjectID(class_id='@auto_inspection_button', object_id='#buttom_bar'),
+            anchors=anchors
         )
 
     def panel0_update(self, events):
@@ -383,6 +393,16 @@ class AutoInspection:
             if event.type == UI_DROP_DOWN_MENU_CHANGED:
                 self.model_name = self.model_data_dropdown.selected_option[0]
                 self.change_model()
+
+            if event.type == MOUSEBUTTONDOWN:
+                if event.button == 3:  # Right mouse button
+                    self.right_click.kill()
+                    if self.scale_and_offset_button.get_abs_rect().collidepoint(mouse.get_pos()):
+                        self.right_click.create_selection(event.pos, {'save config', 'save mark'})
+                    elif self.panel1_rect.collidepoint(mouse.get_pos()):
+                        self.right_click.create_selection(event.pos, {'zoom to fit'})
+                    else:
+                        self.right_click.create_selection(event.pos, self.right_click.options_list)
 
             if event.type == UI_SELECTION_LIST_NEW_SELECTION:  # right click and select click
                 if self.model_name != '-':
@@ -412,9 +432,9 @@ class AutoInspection:
         t = f'{pg.mouse.get_pos()}'
         t += ' 1' if self.panel1_rect.collidepoint(pg.mouse.get_pos()) else ''
         t += ' 2' if self.panel2_rect.collidepoint(pg.mouse.get_pos()) else ''
-        self.fps_label.set_text(f'fps: {round(self.clock.get_fps())}')
-        self.mouse_pos_label.set_text(t)
-        self.scale_and_offset_label.set_text(f'{round(self.scale_factor, 2)} {self.img_offset.astype(int)}')
+        self.fps_button.set_text(f'fps: {round(self.clock.get_fps())}')
+        self.mouse_pos_button.set_text(t)
+        self.scale_and_offset_button.set_text(f'{round(self.scale_factor, 2)} {self.img_offset.astype(int)}')
 
     def panel1_setup(self):
         is_full_hd = self.config['resolution'] == '1920x1080'
@@ -475,7 +495,7 @@ class AutoInspection:
         self.panel2_up_rect = Rect(1347, 40, 573, 90) if is_full_hd else Rect(600, 30, 200, 30)
         self.panel2_up = UIPanel(self.panel2_up_rect, manager=self.manager)
 
-        self.panel2_rect = Rect(1347, 127, 573, 923) if is_full_hd else Rect(600, 30, 200, 430)
+        self.panel2_rect = Rect(1347, 127, 573, 925) if is_full_hd else Rect(600, 30, 200, 432)
         self.panel2 = UIPanel(self.panel2_rect, manager=self.manager)
 
         if is_full_hd:
@@ -512,70 +532,81 @@ class AutoInspection:
 
         self.res_textbox = TextBoxSurface(
             Rect((self.panel2_rect.w - 300) / 2, 12, 300, 150) if is_full_hd \
-                else Rect((self.panel2_rect.w - 150) / 2, 5, 150, 80),
-            (230, 230, 200), (230, 230, 255),
+                else Rect((self.panel2_rect.w - 190) / 2, 5, 190, 80),
             container=self.panel2,
         )
         self.res_textbox.add_text(
             'res', text='-', color=(0, 0, 0),
-            font=pg.font.Font('font/M_PLUS_Rounded_1c/MPLUSRounded1c-Medium.ttf', 130 if is_full_hd else 50)
+            font_name='Rounded Mplus 1c Medium', font_size=130 if is_full_hd else 50
         )
 
         self.passrate_textbox = TextBoxSurface(
             Rect((self.panel2_rect.w - 550) / 2, 170, 550, 180) if is_full_hd \
-                else Rect((self.panel2_rect.w - 190) / 2, 90, 190, 90),
-            (230, 230, 255), (230, 230, 200),
+                else Rect((self.panel2_rect.w - 190) / 2, 84, 190, 90),
             container=self.panel2
         )
 
         self.passrate_textbox.add_text(
             'Pass_', 'Pass',
-            (50, 10) if is_full_hd else (10, 0),
+            (50, 10) if is_full_hd else (10, 5),
             (0, 255, 0),
-            font=pg.font.Font('font/M_PLUS_Rounded_1c/MPLUSRounded1c-Medium.ttf', 40 if is_full_hd else 20),
+            font_name='Rounded Mplus 1c Medium', font_size=40 if is_full_hd else 20,
             anchor='topleft'
         )
         self.passrate_textbox.add_text(
             'Pass', text=': 0',
-            xy=(300, 10) if is_full_hd else (100, 0),
+            xy=(300, 10) if is_full_hd else (100, 5),
             color=(0, 255, 0),
-            font=pg.font.Font('font/M_PLUS_Rounded_1c/MPLUSRounded1c-Medium.ttf', 40 if is_full_hd else 20),
+            font_name='Rounded Mplus 1c Medium', font_size=40 if is_full_hd else 20,
             anchor='topleft'
         )
         self.passrate_textbox.add_text(
             'Fail_', text='Fail',
             xy=(50, 60) if self.config['resolution'] == '1920x1080' else (10, 30),
             color=(255, 0, 0),
-            font=pg.font.Font('font/M_PLUS_Rounded_1c/MPLUSRounded1c-Medium.ttf', 40 if is_full_hd else 20),
+            font_name='Rounded Mplus 1c Medium', font_size=40 if is_full_hd else 20,
             anchor='topleft'
         )
         self.passrate_textbox.add_text(
             'Fail', text=': 0',
             xy=(300, 60) if is_full_hd else (100, 30),
             color=(255, 0, 0),
-            font=pg.font.Font('font/M_PLUS_Rounded_1c/MPLUSRounded1c-Medium.ttf', 40 if is_full_hd else 20),
+            font_name='Rounded Mplus 1c Medium', font_size=40 if is_full_hd else 20,
             anchor='topleft'
         )
         self.passrate_textbox.add_text(
             'Pass rate_', text='Pass rate',
-            xy=(50, 110) if is_full_hd else (10, 60),
+            xy=(50, 110) if is_full_hd else (10, 55),
             color=(0, 0, 0),
-            font=pg.font.Font('font/M_PLUS_Rounded_1c/MPLUSRounded1c-Medium.ttf', 40 if is_full_hd else 20),
+            font_name='Rounded Mplus 1c Medium', font_size=40 if is_full_hd else 20,
             anchor='topleft'
         )
         self.passrate_textbox.add_text(
             'Pass rate', text=': -%',
-            xy=(300, 110) if is_full_hd else (100, 60),
+            xy=(300, 110) if is_full_hd else (100, 55),
             color=(0, 0, 0),
-            font=pg.font.Font('font/M_PLUS_Rounded_1c/MPLUSRounded1c-Medium.ttf', 40 if is_full_hd else 20, ),
+            font_name='Rounded Mplus 1c Medium', font_size=40 if is_full_hd else 20,
             anchor='topleft'
         )
 
+        # size_font = 32 if self.config['resolution'] == '1920x1080' else 20
+        # self.passrate_textbox = UITextBox(
+        #     html_text=(
+        #         f"<font color='#00CC00' size={size_font}>Pass        : 0</font><br>"
+        #         f"<font color='#FF0000' size={size_font}>Fail          : 0</font><br>"
+        #         f"<font color='#000000' size={size_font}>Pass rate: -</font>"
+        #     ),
+        #     relative_rect=Rect((self.panel2_rect.w - 550) / 2, 170, 550, 180) if is_full_hd \
+        #         else Rect((self.panel2_rect.w - 190) / 2, 90, 190, 90),
+        #     container=self.panel2,
+        #     object_id=ObjectID(class_id='@passrate_textbox', object_id='#passrate_textbox')
+        # )
+
         # Create a UITextBox inside the panel
-        self.text_box = pygame_gui.elements.UITextBox(
+        self.res_NG_text_box = UITextBox(
             html_text="",
             relative_rect=Rect(((self.panel2_rect.w - 550) / 2, 357), (550, 555)) if is_full_hd \
-                else Rect((self.panel2_rect.w - 190) / 2, 180, 190, 240),
+                else Rect((self.panel2_rect.w - 190) / 2, 173, 190, 255),
             container=self.panel2
         )
 
@@ -588,6 +619,7 @@ class AutoInspection:
                     self.auto_cap_button.set_text('Auto')
                     self.get_surface_form_url(self.config['url_image'])
                     self.reset_frame()
+                    self.set_name_for_debug()
                 if event.ui_element == self.auto_cap_button:
                     self.auto_cap_button.set_text('Auto' if self.auto_cap_button.text == 'Stop' else 'Stop')
                 if event.ui_element == self.load_button:
@@ -611,6 +643,7 @@ class AutoInspection:
                     print(event.text)
                     self.np_img = cv2.imread(event.text)
                     self.reset_frame()
+                    self.set_name_for_debug()
 
         if self.auto_cap_button.text == 'Stop':
             self.get_surface_form_url(self.config['url_image'])
@@ -627,8 +660,8 @@ class AutoInspection:
         self.panel2_update(events)
         for event in events:
             self.manager.process_events(event)
-            if event.type != 1024:
-                print(event)
+            # if event.type != 1024:
+            #     print(event)
             if event.type == 32870:
                 self.manager.set_active_cursor(pg.SYSTEM_CURSOR_HAND)
             if event.type == 32871:
