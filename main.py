@@ -407,7 +407,7 @@ class AutoInspection:
         anchors = {'top': 'bottom', 'left': 'right', 'bottom': 'bottom', 'right': 'right'}
         self.autoinspection_button = UIButton(
             Rect(-150, -30, 150, 30) if is_full_hd else Rect(-150, -20, 150, 20),
-            f'Auto Inspection 0.2.1', self.manager,
+            f'Auto Inspection 0.2.2', self.manager,
             object_id=ObjectID(class_id='@auto_inspection_button', object_id='#buttom_bar'),
             anchors=anchors
         )
