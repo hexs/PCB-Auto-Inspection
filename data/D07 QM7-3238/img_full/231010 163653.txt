@@ -1,4 +1,0 @@
-c1.1:white
-c1.2:white
-c2.1:white
-c2.2:white

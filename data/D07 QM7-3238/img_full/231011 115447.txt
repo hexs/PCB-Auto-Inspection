@@ -1,2 +1,0 @@
-c6.1:wrongpart
-c6.2:wrongpart

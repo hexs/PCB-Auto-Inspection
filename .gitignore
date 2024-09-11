@@ -11,3 +11,4 @@ data/*/log_img_original
 test.py
 config.json
 log.txt
+**/wait_training.json

@@ -1,4 +1,0 @@
-c1.1:yellow
-c1.2:yellow
-c2.1:yellow
-c2.2:yellow

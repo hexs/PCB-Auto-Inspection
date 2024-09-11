@@ -91,12 +91,14 @@ def json_update(file_path: str, new_data: Dict[str, Any], indent: int = 4):
     except OSError as e:
         raise OSError(f"Error updating {file_path}: {str(e)}")
 
+    return data
+
 
 if __name__ == '__main__':
     config = json_load('config.json', default={
         'device': 'PC',
         'model_name': '-',
-        '2':'1'
+        '2': '1'
     })
     json_update('config.json', config)
     print(config)

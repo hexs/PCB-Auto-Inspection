@@ -134,7 +134,7 @@ theme.update({
     }
 })
 
-# selection_list
+# UISelectionList
 theme.update({
     "selection_list": {
         "colours": {
@@ -155,6 +155,13 @@ theme.update({
         "misc": {
             "shape": "rounded_rectangle",
             "shape_corner_radius": "5",
+        }
+    },
+    # UIButton
+    "@RightClick.#item_list_item": {
+        "misc": {
+            "text_horiz_alignment": "left",
+            "text_horiz_alignment_padding": "10",
         }
     }
 })

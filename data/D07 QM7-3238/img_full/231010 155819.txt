@@ -1,3 +1,0 @@
-Cap1.2:wrongpolarity
-Cap2.2:wrongpolarity
-Cap3.2:wrongpolarity

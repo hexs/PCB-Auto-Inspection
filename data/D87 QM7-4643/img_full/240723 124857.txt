@@ -1,5 +1,0 @@
-J1001:wrongpart
-J741:wrongpart
-J721:wrongpart
-J811:wrongpart
-J851:wrongpart

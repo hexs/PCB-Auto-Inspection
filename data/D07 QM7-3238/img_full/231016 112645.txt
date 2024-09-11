@@ -1,2 +1,0 @@
-c2.1:yellow
-c2.2:yellow

@@ -1,9 +1,11 @@
 import os
 import urllib.request
+from datetime import datetime
 from pprint import pprint
 import numpy as np
 import cv2
 import pygame as pg
+from PIL.ImageChops import offset
 from pygame import Rect, Surface, mouse, MOUSEBUTTONDOWN
 import pygame_gui
 from pygame_gui import UIManager, UI_FILE_DIALOG_PATH_PICKED, UI_BUTTON_PRESSED, UI_DROP_DOWN_MENU_CHANGED, \
@@ -38,14 +40,21 @@ class RightClick:
     def remove_options_list(self, new_options_list):
         self.options_list = self.options_list - new_options_list
 
-    def create_selection(self, mouse_pos, options_list):
+    def create_selection(self, mouse_pos, options_list, object_id=None):
+        # 1 character ≈ 8px
+        max_character = 0
+        for option in options_list:
+            max_character = len(option) if max_character < len(option) else max_character
+
         if len(options_list) > 0:
-            selection_size = (200, 6 + 25 * len(options_list))
+            selection_size = (max_character * 8 + 20, 6 + 25 * len(options_list))
             pos = np.minimum(mouse_pos, self.window_size - selection_size)
             self.selection = UISelectionList(
                 Rect(pos, selection_size),
                 item_list=options_list,
                 manager=self.app.manager,
+                object_id=ObjectID(class_id='@RightClick', object_id=object_id) \
+                    if type(object_id) == str else object_id,
             )
 
     def kill(self):
@@ -55,8 +64,8 @@ class RightClick:
 
     def events(self, events):
         for event in events:
-            if event.type == UI_SELECTION_LIST_NEW_SELECTION:
-                print(f"RightClick: {event.text}")
+            if event.type == UI_SELECTION_LIST_NEW_SELECTION and '#RightClick' in event.ui_object_id:
+                # print(f"RightClick: {event.text}")
                 self.kill()
 
             if event.type == MOUSEBUTTONDOWN:
@@ -74,6 +83,7 @@ class RightClick:
 
 
 class AutoInspection:
+    IMG = np.full((2448, 3264, 3), [10, 100, 10], dtype=np.uint8)
 
     def update_scaled_img_surface(self):
         self.scaled_img_surface = pg.transform.scale(self.img_surface, (
@@ -82,6 +92,8 @@ class AutoInspection:
         self.img_size_vector = np.array(self.scaled_img_surface.get_size())
 
     def get_surface_form_np(self, np_img):
+        if np_img is None:
+            np_img = self.IMG.copy()
         self.img_surface = pg.image.frombuffer(np_img.tobytes(), np_img.shape[1::-1], "BGR")
         self.update_scaled_img_surface()
 
@@ -95,7 +107,7 @@ class AutoInspection:
             self.np_img = np.full((500, 500, 3), [0, 0, 230], dtype=np.uint8)  # Red image on error
         self.get_surface_form_np(self.np_img)
 
-    def show_rects_to_surface(self, frame_dict):
+    def show_rects_to_surface(self, frame_dict, type='frame'):
         for k, v in frame_dict.items():
             xywh = np.array(v.get('xywh'))
             xy = xywh[:2]
@@ -116,7 +128,7 @@ class AutoInspection:
             pg.draw.line(self.scaled_img_surface, (0, 0, 100), rect.topleft, rect.bottomleft)
             pg.draw.line(self.scaled_img_surface, (0, 0, 100), rect.topright, rect.bottomright)
 
-            if v.get('k'):
+            if type == 'mark':
                 wh = wh * v['k']
                 x1y1 = xy - wh / 2
                 x1y1_ = x1y1 * self.img_size_vector
@@ -139,6 +151,12 @@ class AutoInspection:
                 text += f"\n{v['highest_score_name']} {v['highest_score_percent']}"
             putText(self.scaled_img_surface, text, rect.topleft, 16, (0, 0, 255), (255, 255, 255), anchor='bottomleft')
 
+            if type == 'frame':
+                if k in self.debug_class_name.keys():
+                    class_name = self.debug_class_name[k]
+                    putText(self.scaled_img_surface, f'{class_name}', rect.move((0, 10)).topleft, 16,
+                            (220, 0, 190), (255, 255, 255), anchor='bottomleft')
+
     def __init__(self):
         self.config = json_load('config.json', default={
             'device_note': 'PC, RP',
@@ -157,7 +175,7 @@ class AutoInspection:
         self.model_name = self.config['model_name']
 
         self.is_running = True
-        self.np_img = np.full((2448, 3264, 3), [10, 100, 10], dtype=np.uint8)
+        self.np_img = self.IMG.copy()
 
         pg.init()
         pg.display.set_caption('Auto Inspection')
@@ -169,11 +187,16 @@ class AutoInspection:
         self.setup_ui()
         self.change_model()
 
+        self.file_name = None
+        self.debug_class_name = {}  # key is pos_name, vel is class_name
+
         self.pass_n = 0
         self.fail_n = 0
 
-    def set_name_for_debug(self):
-        ...
+    def set_name_for_debug(self, file_name=None):
+        self.file_name = datetime.now().strftime("%Y%m%d %H%M%S") if file_name is None else file_name
+        json_path = f'data/{self.model_name}/img_full/{self.file_name}.json'
+        self.debug_class_name = json_load(json_path, {})
 
     def reset_frame(self):
         for name, frame in self.frame_dict.items():
@@ -214,12 +237,14 @@ class AutoInspection:
         if self.model_name == '-':
             self.adj_button.disable()
             self.predict_button.disable()
+            self.open_image_button.disable()
             self.frame_dict = {}
             self.model_dict = {}
             self.mark_dict = {}
         else:
             self.adj_button.enable()
             self.predict_button.enable()
+            self.open_image_button.enable()
             json_data = json_load(os.path.join('data', self.model_name, 'frames pos.json'))
             self.frame_dict = json_data['frames']
             self.model_dict = json_data['models']
@@ -331,6 +356,11 @@ class AutoInspection:
         self.model_data_dropdown = UIDropDownMenu(
             model_data, '-', rect, self.manager,
             anchors={'left_target': self.model_label})
+        self.open_image_button = UIButton(
+            Rect(10, 5, 60, 30) if is_full_hd else Rect(10, 0, 60, 30),
+            'Open...', self.manager,
+            anchors={'left_target': self.model_data_dropdown})
+        self.open_image_button.disable()
 
         # top right
         anchors = {'top': 'top', 'left': 'right', 'bottom': 'top', 'right': 'right'}
@@ -366,6 +396,12 @@ class AutoInspection:
             object_id=ObjectID(class_id='@scale_and_offset_button', object_id='#buttom_bar'),
             anchors=anchors | {'left_target': self.mouse_pos_button}
         )
+        self.file_name_button = UIButton(
+            Rect(0, -30, 130, 30) if is_full_hd else Rect(0, -20, 130, 20),
+            '', self.manager,
+            object_id=ObjectID(class_id='@file_name_button', object_id='#buttom_bar'),
+            anchors=anchors | {'left_target': self.scale_and_offset_button}
+        )
 
         # bottom left
         anchors = {'top': 'bottom', 'left': 'right', 'bottom': 'bottom', 'right': 'right'}
@@ -390,6 +426,15 @@ class AutoInspection:
                     self.is_running = False
                 if event.ui_element == self.minimize_button:
                     pg.display.iconify()
+                if event.ui_element == self.open_image_button:
+                    self.file_dialog = UIFileDialog(
+                        Rect(430, 50, 440, 500) if is_full_hd else Rect(200, 50, 400, 400),
+                        self.manager, 'Load Image...', {".png", ".jpg"},
+                        os.path.join('data', self.model_name, 'img_full'),
+                        allow_picking_directories=True,
+                        allow_existing_files_only=True,
+                        object_id=ObjectID(class_id='@file_dialog', object_id='#open_img_full'),
+                    )
             if event.type == UI_DROP_DOWN_MENU_CHANGED:
                 self.model_name = self.model_data_dropdown.selected_option[0]
                 self.change_model()
@@ -398,27 +443,57 @@ class AutoInspection:
                 if event.button == 3:  # Right mouse button
                     self.right_click.kill()
                     if self.scale_and_offset_button.get_abs_rect().collidepoint(mouse.get_pos()):
-                        self.right_click.create_selection(event.pos, {'save config', 'save mark'})
-                    elif self.panel1_rect.collidepoint(mouse.get_pos()):
-                        self.right_click.create_selection(event.pos, {'zoom to fit'})
-                    else:
-                        self.right_click.create_selection(event.pos, self.right_click.options_list)
+                        self.right_click.create_selection(
+                            event.pos, {'save config', 'save mark'},
+                            '#RightClick.bottom_bar'
+                        )
+                    if self.panel1_rect.collidepoint(mouse.get_pos()):
+                        options_list = set()
+                        options_list = options_list.union({'zoom to fit'})
+                        if self.model_name != '-':
+                            panel_mouse_xy_ = np.array(event.pos) - self.panel1_rect.topleft
+                            img_wh_ = np.array(self.np_img.shape[1::-1])
+                            panel_wh_ = np.array(self.panel1_rect.size)
+                            img_scale_wh_ = img_wh_ * self.scale_factor
 
-            if event.type == UI_SELECTION_LIST_NEW_SELECTION:  # right click and select click
-                if self.model_name != '-':
-                    if event.text == 'save config':
-                        json_update(os.path.join('data', self.model_name, 'model_config.json'), {
-                            f"{self.config['resolution']}": {
-                                "scale_factor": self.scale_factor,
-                                "img_offset": self.img_offset.tolist()
-                            }
-                        })
-                    if event.text == 'save mark':
-                        for name, mark in self.mark_dict.items():
-                            xywh = mark['xywh']
-                            img = crop_img(self.np_img, xywh)
-                            cv2.imwrite(os.path.join('data', self.model_name, f'{name}.png'), img)
+                            # Equation in "Equation/fine img_mouse_xy_.png"
+                            img_mouse_xy_ = img_scale_wh_ / 2 - self.img_offset - panel_wh_ / 2 + panel_mouse_xy_
+                            img_mouse_xy = img_mouse_xy_ / img_scale_wh_
 
+                            for name, frame in self.frame_dict.items():
+                                xywh = np.array(frame['xywh'])
+                                xy = xywh[:2]
+                                wh = xywh[2:]
+                                if np.all((xy - wh / 2 <= img_mouse_xy) & (img_mouse_xy <= xy + wh / 2)):
+                                    class_names = self.model_dict[frame['model_used']]['class_names']
+                                    options_list = options_list.union(
+                                        {f"add data {name}->{class_name}" for class_name in class_names}
+                                    )
+
+                        self.right_click.create_selection(
+                            event.pos,
+                            options_list,
+                            '#RightClick.on_panel_1'
+                        )
+
+            # right click and select click
+            if event.type == UI_SELECTION_LIST_NEW_SELECTION:
+                if event.ui_object_id == '#RightClick.bottom_bar':
+                    if self.model_name != '-':
+                        if event.text == 'save config':
+                            json_update(os.path.join('data', self.model_name, 'model_config.json'), {
+                                f"{self.config['resolution']}": {
+                                    "scale_factor": self.scale_factor,
+                                    "img_offset": self.img_offset.tolist()
+                                }
+                            })
+                        if event.text == 'save mark':
+                            for name, mark in self.mark_dict.items():
+                                xywh = mark['xywh']
+                                img = crop_img(self.np_img, xywh)
+                                cv2.imwrite(os.path.join('data', self.model_name, f'{name}.png'), img)
+
+                if event.ui_object_id == '#RightClick.on_panel_1':
                     if event.text == 'zoom to fit':
                         data = json_load(os.path.join('data', self.model_name, 'model_config.json'), {
                             f"{self.config['resolution']}": {
@@ -429,12 +504,28 @@ class AutoInspection:
                         self.scale_factor = data[self.config['resolution']]['scale_factor']
                         self.img_offset = np.array(data[self.config['resolution']]['img_offset'])
 
+                    if 'add data ' in event.text:
+                        pos_name, class_name = event.text.split('add data ')[1].split('->')
+                        if self.file_name:
+                            cv2.imwrite(f'data/{self.model_name}/img_full/{self.file_name}.png', self.np_img)
+                            self.debug_class_name = json_update(
+                                f'data/{self.model_name}/img_full/{self.file_name}.json',
+                                {pos_name: class_name}
+                            )
+                            json_update(
+                                f'data/{self.model_name}/wait_training.json',
+                                {self.frame_dict[pos_name]['model_used']: True}
+                            )
+
+
+
         t = f'{pg.mouse.get_pos()}'
         t += ' 1' if self.panel1_rect.collidepoint(pg.mouse.get_pos()) else ''
         t += ' 2' if self.panel2_rect.collidepoint(pg.mouse.get_pos()) else ''
         self.fps_button.set_text(f'fps: {round(self.clock.get_fps())}')
         self.mouse_pos_button.set_text(t)
         self.scale_and_offset_button.set_text(f'{round(self.scale_factor, 2)} {self.img_offset.astype(int)}')
+        self.file_name_button.set_text(f'{self.file_name}')
 
     def panel1_setup(self):
         is_full_hd = self.config['resolution'] == '1920x1080'
@@ -485,8 +576,8 @@ class AutoInspection:
                 if event.type == pg.MOUSEBUTTONUP and event.button == 2:
                     self.moving = False
 
-        self.show_rects_to_surface(self.mark_dict)
-        self.show_rects_to_surface(self.frame_dict)
+        self.show_rects_to_surface(self.mark_dict, 'mark')
+        self.show_rects_to_surface(self.frame_dict, 'frame')
         self.panel1_surface.blit(self.scaled_img_surface,
                                  ((self.panel1_rect.size - self.img_size_vector) / 2 + self.img_offset).tolist())
 
@@ -631,6 +722,7 @@ class AutoInspection:
                         'data' if self.model_name == '-' else os.path.join('data', self.model_name),
                         allow_picking_directories=True,
                         allow_existing_files_only=True,
+                        object_id=ObjectID(class_id='@file_dialog', object_id='#open_img_other'),
                     )
                 if event.ui_element == self.adj_button:
                     print(self.mark_dict)
@@ -639,11 +731,28 @@ class AutoInspection:
                 if event.ui_element == self.predict_button:
                     self.predict()
             if event.type == UI_FILE_DIALOG_PATH_PICKED:
-                if '.png' in event.text:
-                    print(event.text)
-                    self.np_img = cv2.imread(event.text)
-                    self.reset_frame()
-                    self.set_name_for_debug()
+                # from Load Image
+                if event.ui_object_id == '#open_img_other':
+                    if '.png' in event.text:
+                        print(event.text)
+                        self.np_img = cv2.imread(event.text)
+                        self.reset_frame()
+                        self.set_name_for_debug()
+                # from Open Image
+                if event.ui_object_id == '#open_img_full':
+                    if '.png' in event.text:
+                        print('from open_data', event.text)
+                        self.np_img = cv2.imread(event.text)
+                        self.reset_frame()
+                        self.set_name_for_debug(os.path.split(event.text)[1].replace('.png', ''))
+
+            # auto show image
+            # if event.type == UI_SELECTION_LIST_NEW_SELECTION and event.ui_object_id == '#file_dialog.#file_display_list':
+            #     path = ...
+            #     if '.png' in event.text:
+            #         self.np_img = cv2.imread(event.text)
+            #         self.reset_frame()
+            #         self.set_name_for_debug()
 
         if self.auto_cap_button.text == 'Stop':
             self.get_surface_form_url(self.config['url_image'])
