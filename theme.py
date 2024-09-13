@@ -6,21 +6,19 @@ theme.update({
         "colours": {
             "normal_text": "#000",
         },
-        "font":
-            {
-                "name": "Rounded Mplus 1c Medium",
-                "size": "14"
-            },
+        "font": {
+            "name": "Rounded Mplus 1c Medium",
+            "size": "14"
+        },
         "misc": {
             "text_horiz_alignment": "left"
         }
     },
     "#model_label": {
-        "font":
-            {
-                "name": "Rounded Mplus 1c Medium",
-                "size": "18"
-            },
+        "font": {
+            "name": "Rounded Mplus 1c Medium",
+            "size": "18"
+        },
     }
 })
 
@@ -57,6 +55,8 @@ theme.update({
             "text_shadow_size": "0",
             "text_shadow_offset": "0,0"
         }
+    },
+    '@panel2_up_button': {
     },
     '#close_button': {
         "colours": {
@@ -249,11 +249,10 @@ theme.update({
         }
     },
     "passrate_textbox": {
-        "font":
-            {
-                "name": "Rounded Mplus 1c Medium",
-                "size": "50"
-            },
+        "font": {
+            "name": "Rounded Mplus 1c Medium",
+            "size": "50"
+        },
     }
 
 })

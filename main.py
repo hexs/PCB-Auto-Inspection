@@ -5,7 +5,6 @@ from pprint import pprint
 import numpy as np
 import cv2
 import pygame as pg
-from PIL.ImageChops import offset
 from pygame import Rect, Surface, mouse, MOUSEBUTTONDOWN
 import pygame_gui
 from pygame_gui import UIManager, UI_FILE_DIALOG_PATH_PICKED, UI_BUTTON_PRESSED, UI_DROP_DOWN_MENU_CHANGED, \
@@ -22,9 +21,6 @@ from theme import theme
 from training import crop_img
 from TextBoxSurface import TextBoxSurface, gradient_surface
 from pygame_function import putText, UITextBox
-import os
-import urllib.request
-from pprint import pprint
 
 
 class RightClick:
@@ -108,7 +104,7 @@ class AutoInspection:
         self.get_surface_form_np(self.np_img)
 
     def show_rects_to_surface(self, frame_dict, type='frame'):
-        for k, v in frame_dict.items():
+        for k, v in frame_dict.items() if frame_dict else ():
             xywh = np.array(v.get('xywh'))
             xy = xywh[:2]
             wh = xywh[2:]
@@ -137,7 +133,7 @@ class AutoInspection:
 
                 pg.draw.rect(self.scaled_img_surface, (200, 255, 0), rect, 1)
 
-        for k, v in frame_dict.items():
+        for k, v in frame_dict.items() if frame_dict else ():
             xywh = np.array(v.get('xywh'))
             xy = xywh[:2]
             wh = xywh[2:]
@@ -194,12 +190,12 @@ class AutoInspection:
         self.fail_n = 0
 
     def set_name_for_debug(self, file_name=None):
-        self.file_name = datetime.now().strftime("%Y%m%d %H%M%S") if file_name is None else file_name
+        self.file_name = datetime.now().strftime("%y%m%d %H%M%S") if file_name is None else file_name
         json_path = f'data/{self.model_name}/img_full/{self.file_name}.json'
         self.debug_class_name = json_load(json_path, {})
 
     def reset_frame(self):
-        for name, frame in self.frame_dict.items():
+        for name, frame in self.frame_dict.items() if self.frame_dict else ():
             frame['color_rect'] = (255, 220, 0)
             frame['width_rect'] = 2
             frame['highest_score_name'] = ''
@@ -212,7 +208,7 @@ class AutoInspection:
     def setup_NG_details(self):
         size_font = 25 if self.config['resolution'] == '1920x1080' else 13
         formatted_text = ""
-        for k, v in self.frame_dict.items():
+        for k, v in self.frame_dict.items() if self.frame_dict else ():
             if v.get('highest_score_name') in ['', 'OK']:
                 continue
             text = f"{k} {v['highest_score_name']} {v['highest_score_percent']}"
@@ -234,29 +230,28 @@ class AutoInspection:
         # )
 
     def change_model(self):
+        self.adj_button.disable()
+        self.predict_button.disable()
+        self.open_image_button.disable()
+        self.frame_dict = None
+        self.model_dict = None
+        self.mark_dict = None
         if self.model_name == '-':
-            self.adj_button.disable()
-            self.predict_button.disable()
-            self.open_image_button.disable()
-            self.frame_dict = {}
-            self.model_dict = {}
-            self.mark_dict = {}
+            pass
         else:
-            self.adj_button.enable()
-            self.predict_button.enable()
-            self.open_image_button.enable()
-            json_data = json_load(os.path.join('data', self.model_name, 'frames pos.json'))
-            self.frame_dict = json_data['frames']
-            self.model_dict = json_data['models']
-            self.mark_dict = json_data['marks']
+            json_data = json_load(os.path.join('data', self.model_name, 'frames pos.json'), {})
+            self.frame_dict = json_data.get('frames')
+            self.model_dict = json_data.get('models')
+            self.mark_dict = json_data.get('marks')
             self.reset_frame()
-            for name, frame in self.mark_dict.items():
+
+            for name, frame in self.mark_dict.items() if self.mark_dict else ():
                 frame['color_rect'] = (200, 20, 100)
                 frame['width_rect'] = 1
                 frame['xy'] = np.array(frame['xywh'][:2])
                 frame['wh'] = np.array(frame['xywh'][2:])
                 frame['xywh_around'] = np.concatenate((frame['xy'], frame['wh'] * frame['k']))
-            for name, model in self.model_dict.items():
+            for name, model in self.model_dict.items() if self.model_dict else ():
                 try:
                     model['model'] = models.load_model(fr'data/{self.model_name}/model/{name}.h5')
                 except Exception as e:
@@ -284,6 +279,10 @@ class AutoInspection:
             self.pass_n = self.fail_n = 0
             self.update_status()
 
+            self.open_image_button.enable()
+            self.adj_button.enable() if self.mark_dict else self.adj_button.disable()
+            self.predict_button.enable() if self.model_dict else self.predict_button.disable()
+
         self.res_textbox.update_text('res', text='-')
         self.setup_NG_details()
 
@@ -295,7 +294,7 @@ class AutoInspection:
         res_surface_text = 'OK'
         wh_ = np.array(self.np_img.shape[1::-1])
         print(self.model_dict)
-        for name, frame in self.frame_dict.items():
+        for name, frame in self.frame_dict.items() if self.frame_dict else ():
             if self.model_dict[frame['model_used']].get('model'):  # มีไฟล์ model.h5
                 model = self.model_dict[frame['model_used']]['model']
                 model_class_names = self.model_dict[frame['model_used']]['model_class_names']
@@ -355,11 +354,13 @@ class AutoInspection:
         rect = Rect(10, 5, 300, 30) if is_full_hd else Rect(10, 0, 200, 30)
         self.model_data_dropdown = UIDropDownMenu(
             model_data, '-', rect, self.manager,
-            anchors={'left_target': self.model_label})
+            anchors={'left_target': self.model_label}
+        )
         self.open_image_button = UIButton(
             Rect(10, 5, 60, 30) if is_full_hd else Rect(10, 0, 60, 30),
             'Open...', self.manager,
-            anchors={'left_target': self.model_data_dropdown})
+            anchors={'left_target': self.model_data_dropdown}
+        )
         self.open_image_button.disable()
 
         # top right
@@ -435,6 +436,16 @@ class AutoInspection:
                         allow_existing_files_only=True,
                         object_id=ObjectID(class_id='@file_dialog', object_id='#open_img_full'),
                     )
+
+            if event.type == pygame_gui.UI_BUTTON_START_PRESS:
+                if event.ui_object_id == 'drop_down_menu.#selected_option':
+                    os.makedirs('data', exist_ok=True)
+                    model_data = os.listdir('data') + ['-']
+                    self.model_data_dropdown.options_list = []
+                    for option in model_data:
+                        self.model_data_dropdown.options_list.append((option, option))
+                    self.model_data_dropdown.menu_states[
+                        'expanded'].options_list = self.model_data_dropdown.options_list
             if event.type == UI_DROP_DOWN_MENU_CHANGED:
                 self.model_name = self.model_data_dropdown.selected_option[0]
                 self.change_model()
@@ -460,7 +471,7 @@ class AutoInspection:
                             img_mouse_xy_ = img_scale_wh_ / 2 - self.img_offset - panel_wh_ / 2 + panel_mouse_xy_
                             img_mouse_xy = img_mouse_xy_ / img_scale_wh_
 
-                            for name, frame in self.frame_dict.items():
+                            for name, frame in self.frame_dict.items() if self.frame_dict else ():
                                 xywh = np.array(frame['xywh'])
                                 xy = xywh[:2]
                                 wh = xywh[2:]
@@ -488,7 +499,7 @@ class AutoInspection:
                                 }
                             })
                         if event.text == 'save mark':
-                            for name, mark in self.mark_dict.items():
+                            for name, mark in self.mark_dict.items() if self.mark_dict else ():
                                 xywh = mark['xywh']
                                 img = crop_img(self.np_img, xywh)
                                 cv2.imwrite(os.path.join('data', self.model_name, f'{name}.png'), img)
@@ -516,8 +527,6 @@ class AutoInspection:
                                 f'data/{self.model_name}/wait_training.json',
                                 {self.frame_dict[pos_name]['model_used']: True}
                             )
-
-
 
         t = f'{pg.mouse.get_pos()}'
         t += ' 1' if self.panel1_rect.collidepoint(pg.mouse.get_pos()) else ''
@@ -575,18 +584,18 @@ class AutoInspection:
                         self.img_offset += np.array(event.rel)
                 if event.type == pg.MOUSEBUTTONUP and event.button == 2:
                     self.moving = False
-
-        self.show_rects_to_surface(self.mark_dict, 'mark')
+        if self.mark_dict is not None:
+            self.show_rects_to_surface(self.mark_dict, 'mark')
         self.show_rects_to_surface(self.frame_dict, 'frame')
         self.panel1_surface.blit(self.scaled_img_surface,
                                  ((self.panel1_rect.size - self.img_size_vector) / 2 + self.img_offset).tolist())
 
     def panel2_setup(self):
         is_full_hd = self.config['resolution'] == '1920x1080'
-        self.panel2_up_rect = Rect(1347, 40, 573, 90) if is_full_hd else Rect(600, 30, 200, 30)
+        self.panel2_up_rect = Rect(1347, 40, 573, 90) if is_full_hd else Rect(600, 30, 200, 72)
         self.panel2_up = UIPanel(self.panel2_up_rect, manager=self.manager)
 
-        self.panel2_rect = Rect(1347, 127, 573, 925) if is_full_hd else Rect(600, 30, 200, 432)
+        self.panel2_rect = Rect(1347, 127, 573, 925) if is_full_hd else Rect(600, 99, 200, 363)
         self.panel2 = UIPanel(self.panel2_rect, manager=self.manager)
 
         if is_full_hd:
@@ -604,18 +613,18 @@ class AutoInspection:
                 'left_target': self.adj_button
             })
         else:
-            self.capture_button = UIButton(Rect(350, 0, 60, 30), 'Capture', manager=self.manager, )
-            self.auto_cap_button = UIButton(Rect(0, 0, 40, 30), 'Auto', manager=self.manager, anchors={
+            self.capture_button = UIButton(Rect(6, 6, 60, 45), 'Capture', container=self.panel2_up, )
+            self.auto_cap_button = UIButton(Rect(6, 0, 60, 15), 'Auto', container=self.panel2_up, anchors={
+                'top_target': self.capture_button
+            })
+            self.load_button = UIButton(Rect(0, 6, 49, 60), 'Load', container=self.panel2_up, anchors={
                 'left_target': self.capture_button
             })
-            self.load_button = UIButton(Rect(10, 0, 100, 30), 'Load Image', manager=self.manager, anchors={
-                'left_target': self.auto_cap_button
-            })
-            self.adj_button = UIButton(Rect(10, 0, 70, 30), 'Adj Image', manager=self.manager, anchors={
+            self.adj_button = UIButton(Rect(0, 6, 79, 30), 'Adj Image', container=self.panel2_up, anchors={
                 'left_target': self.load_button
             })
-            self.predict_button = UIButton(Rect(0, 0, 70, 30), 'Predict', manager=self.manager, anchors={
-                'left_target': self.adj_button,
+            self.predict_button = UIButton(Rect(0, 35, 79, 30), 'Predict', container=self.panel2_up, anchors={
+                'left_target': self.load_button,
             })
         self.file_dialog = None
         self.adj_button.disable()
@@ -697,7 +706,7 @@ class AutoInspection:
         self.res_NG_text_box = UITextBox(
             html_text="",
             relative_rect=Rect(((self.panel2_rect.w - 550) / 2, 357), (550, 555)) if is_full_hd \
-                else Rect((self.panel2_rect.w - 190) / 2, 173, 190, 255),
+                else Rect((self.panel2_rect.w - 190) / 2, 173, 190, 186),
             container=self.panel2
         )
 
@@ -771,9 +780,9 @@ class AutoInspection:
             self.manager.process_events(event)
             # if event.type != 1024:
             #     print(event)
-            if event.type == 32870:
+            if event.type == pygame_gui.UI_BUTTON_ON_HOVERED:
                 self.manager.set_active_cursor(pg.SYSTEM_CURSOR_HAND)
-            if event.type == 32871:
+            if event.type == pygame_gui.UI_BUTTON_ON_UNHOVERED:
                 self.manager.set_active_cursor(pg.SYSTEM_CURSOR_ARROW)
 
         self.right_click.events(events)
