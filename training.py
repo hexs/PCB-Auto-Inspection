@@ -9,7 +9,7 @@ import tensorflow as tf
 from keras import layers, models
 from keras.models import Sequential
 from datetime import datetime
-from manage_json_files import json_load
+from manage_json_files import json_load, json_update
 from constant import *
 
 
@@ -57,36 +57,32 @@ def save_img(model_name, frame_dict):
             shutil.rmtree(folder)
 
     # Get list of image files
-    img_files = [f.split('.')[0] for f in os.listdir(IMG_FULL_PATH) if f.endswith(('.png', '.txt'))]
+    img_files = [f.split('.')[0] for f in os.listdir(IMG_FULL_PATH) if f.endswith(('.png', '.json'))]
     img_files = sorted(set(img_files), reverse=True)
 
     for i, file_name in enumerate(img_files):
         print(f'{i + 1}/{len(img_files)} {file_name}')
 
-        with open(f"{IMG_FULL_PATH}/{file_name}.txt") as f:
-            frames_list = f.readlines()
-
+        frames = json_load(f"{IMG_FULL_PATH}/{file_name}.json")
         img = cv2.imread(f"{IMG_FULL_PATH}/{file_name}.png")
 
-        for data_text in frames_list:
-            frame_name, status = data_text.strip().split(':')
-
-            if frame_name not in frame_dict:
-                print(f'{frame_name} not in frames')
+        for pos_name, status in frames.items():
+            if pos_name not in frame_dict:
+                print(f'{pos_name} not in frames')
                 continue
 
-            if frame_dict[frame_name]['model_used'] != model_name:
+            if frame_dict[pos_name]['model_used'] != model_name:
                 continue
 
-            print(f'    {model_name} {frame_name} {status}')
+            print(f'    {model_name} {pos_name} {status}')
 
-            xywh = frame_dict[frame_name]['xywh']
+            xywh = frame_dict[pos_name]['xywh']
 
             # Save original cropped image
             img_crop = crop_img(img, xywh)
             log_path = os.path.join(IMG_FRAME_LOG_PATH, model_name)
             os.makedirs(log_path, exist_ok=True)
-            cv2.imwrite(f"{log_path}/{status} {frame_name} {file_name}.png", img_crop)
+            cv2.imwrite(f"{log_path}/{status} {pos_name} {file_name}.png", img_crop)
 
             # Process and save variations
             frame_path = os.path.join(IMG_FRAME_PATH, model_name, status)
@@ -100,7 +96,7 @@ def save_img(model_name, frame_dict):
                         for contrast in [114, 120, 127, 133, 140]:
                             img_crop_BC = controller(img_crop, brightness, contrast)
 
-                            output_filename = f"{file_name} {frame_name} {status} {shift_y} {shift_x} {brightness} {contrast}.png"
+                            output_filename = f"{file_name} {pos_name} {status} {shift_y} {shift_x} {brightness} {contrast}.png"
                             cv2.imwrite(os.path.join(frame_path, output_filename), img_crop_BC)
 
 
@@ -199,18 +195,21 @@ def training(PCB_name):
     model_list = [file.split('.')[0] for file in os.listdir(MODEL_PATH) if file.endswith('.h5')]
     print()
     print(f'{CYAN}===========  {PCB_name}  ==========={ENDC}')
-    print(f'model_list (ที่มี) {len(model_list)} {model_list}')
+    print(f'model.h5 (ที่มี) = {len(model_list)} {model_list}')
 
     json_data = json_load(os.path.join('data', PCB_name, 'frames pos.json'))
     frame_dict = json_data['frames']
     model_dict = json_data['models']
 
     for model_name, model in model_dict.items():
-        print(f'{model} img_height_width={img_height}, {img_width}')
-        if model_name in model_list:
-            print('continue')
-            continue
+        # อ่าน wait_training.json
+        wait_training_dict = json_load(f'data/{PCB_name}/wait_training.json', {})
 
+        if model_name not in wait_training_dict.keys() or wait_training_dict[model_name] == False:
+            print(f'continue {model_name}')
+            continue
+        print()
+        print(f'{model_name} {model}')
         t1 = datetime.now()
         print('-------- >>> crop_img <<< ---------')
         save_img(model_name, frame_dict)
@@ -218,6 +217,7 @@ def training(PCB_name):
         print(f'{t2 - t1} เวลาที่ใช้ในการเปลียน img_full เป็น shift_img ')
         print('------- >>> training... <<< ---------')
         create_model(model_name)
+        json_update(f'data/{PCB_name}/wait_training.json', {model_name: False})
         t3 = datetime.now()
         print(f'{t2 - t1} เวลาที่ใช้ในการเปลียน img_full เป็น shift_img ')
         print(f'{t3 - t2} เวลาที่ใช้ในการ training ')
