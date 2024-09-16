@@ -710,18 +710,39 @@ class AutoInspection:
             container=self.panel2
         )
 
-    def panel2_update(self, events):
+    def panel2_update(self, events, data):
+        def capture_button():
+            self.auto_cap_button.set_text('Auto')
+            self.get_surface_form_url(self.config['url_image'])
+            self.reset_frame()
+            self.set_name_for_debug()
+
+        def auto_cap_button():
+            self.auto_cap_button.set_text('Auto' if self.auto_cap_button.text == 'Stop' else 'Stop')
+
+        def adj_button():
+            self.np_img = adj_image(self.np_img, self.model_name, self.mark_dict)
+            self.reset_frame()
+
         is_full_hd = self.config['resolution'] == '1920x1080'
-        # self.panel2_surface.fill((100, 100, 100))
+
+        for event in data.get('events_from_web') or []:
+            if event == 'Capture':
+                capture_button()
+            if event == 'Auto':
+                auto_cap_button()
+            if event == 'Adj':
+                adj_button()
+            if event == 'Predict':
+                self.predict()
+        data['events_from_web'] = []
+
         for event in events:
             if event.type == UI_BUTTON_PRESSED:
                 if event.ui_element == self.capture_button:
-                    self.auto_cap_button.set_text('Auto')
-                    self.get_surface_form_url(self.config['url_image'])
-                    self.reset_frame()
-                    self.set_name_for_debug()
+                    capture_button()
                 if event.ui_element == self.auto_cap_button:
-                    self.auto_cap_button.set_text('Auto' if self.auto_cap_button.text == 'Stop' else 'Stop')
+                    auto_cap_button()
                 if event.ui_element == self.load_button:
                     self.auto_cap_button.set_text('Auto')
 
@@ -734,9 +755,7 @@ class AutoInspection:
                         object_id=ObjectID(class_id='@file_dialog', object_id='#open_img_other'),
                     )
                 if event.ui_element == self.adj_button:
-                    print(self.mark_dict)
-                    self.np_img = adj_image(self.np_img, self.model_name, self.mark_dict)
-                    self.reset_frame()
+                    adj_button()
                 if event.ui_element == self.predict_button:
                     self.predict()
             if event.type == UI_FILE_DIALOG_PATH_PICKED:
@@ -771,11 +790,11 @@ class AutoInspection:
         self.panel1_setup()
         self.panel2_setup()
 
-    def handle_events(self):
+    def handle_events(self, data):
         events = pg.event.get()
         self.panel0_update(events)
         self.panel1_update(events)
-        self.panel2_update(events)
+        self.panel2_update(events, data)
         for event in events:
             self.manager.process_events(event)
             # if event.type != 1024:
@@ -787,13 +806,13 @@ class AutoInspection:
 
         self.right_click.events(events)
 
-    def run(self):
+    def run(self, data):
         while self.is_running:
             time_delta = self.clock.tick(60) / 1000.0
             self.display.fill((220, 220, 220))
             self.get_surface_form_np(self.np_img)
 
-            self.handle_events()
+            self.handle_events(data)
 
             self.display.blit(self.panel1_surface, self.panel1_rect.topleft)
 
@@ -803,7 +822,7 @@ class AutoInspection:
             pg.display.update()
 
 
-def main():
+def main(data={}):
     app = AutoInspection()
     app.run()
 

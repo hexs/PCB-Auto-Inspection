@@ -115,7 +115,7 @@ def adj_image(image, model_name, mark_dict):
     xy2 = mark_dict['m2']['xy']
     m1_xy = fine_mark(image, mark1, mark_dict['m1']['xywh_around'])
     m2_xy = fine_mark(image, mark2, mark_dict['m2']['xywh_around'])
-    print('m1_xy =', m1_xy, '  m2_xy =', m2_xy)
+    # print('m1_xy =', m1_xy, '  m2_xy =', m2_xy)
 
     if m1_xy is None or m2_xy is None:
         print('no mark point_be')
@@ -130,8 +130,8 @@ def adj_image(image, model_name, mark_dict):
         default_phi = np.degrees(np.arctan2((xy2_[1] - xy1_[1]), (xy2_[0] - xy1_[0])))
         phi = np.degrees(np.arctan2((m2_xy_[1] - m1_xy_[1]), (m2_xy_[0] - m1_xy_[0])))
 
-        print((m1_xy_, xy1_))
-        print(m2_xy_, xy2_)
+        # print((m1_xy_, xy1_))
+        # print(m2_xy_, xy2_)
         line1 = perpendicular_line(m1_xy_, xy1_)
         line2 = perpendicular_line(m2_xy_, xy2_)
         intersection = intersection_point(line1, line2)
