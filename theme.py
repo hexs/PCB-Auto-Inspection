@@ -379,6 +379,6 @@ theme.update({
 })
 
 if __name__ == '__main__':
-    import main
+    import auto_inspection
 
-    main.main()
+    auto_inspection.main()
