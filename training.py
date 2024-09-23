@@ -232,5 +232,6 @@ if __name__ == '__main__':
     img_width = 180
     epochs = 5
 
-    training(PCB_name='D87 QM7-4643')
-    training(PCB_name='D07 QM7-3238')
+    # training(PCB_name='D87 QM7-4643')
+    # training(PCB_name='D07 QM7-3238')
+    training(PCB_name='QC7-7990')
