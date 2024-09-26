@@ -93,6 +93,11 @@ class AutoInspection:
         self.img_surface = pg.image.frombuffer(np_img.tobytes(), np_img.shape[1::-1], "BGR")
         self.update_scaled_img_surface()
 
+    def get_surface_form_robot(self, data):
+        # data['robot capture'] is '', 'capture', 'capture ok'
+        data['robot capture'] = 'capture'
+        self.capture_button.disable()
+
     def get_surface_form_url(self, url):
         try:
             req = urllib.request.urlopen(url)
@@ -153,7 +158,7 @@ class AutoInspection:
                     putText(self.scaled_img_surface, f'{class_name}', rect.move((0, 10)).topleft, 16,
                             (220, 0, 190), (255, 255, 255), anchor='bottomleft')
 
-    def __init__(self):
+    def __init__(self, data):
         self.config = json_load('config.json', default={
             'device_note': 'PC, RP',
             'device': 'PC',
@@ -162,6 +167,9 @@ class AutoInspection:
             'model_name': '-',
             'fullscreen': True,
             'url_image': 'http://192.168.225.137:2000/image?source=video_capture&id=0',
+            'xfunction_note': 'robot',
+            'xfunction': '',
+            'robot_url': 'http://192.168.137.200:5000',
         })
         json_update('config.json', self.config)
         if self.config['resolution'] == '1920x1080':
@@ -180,10 +188,11 @@ class AutoInspection:
         self.display = pg.display.set_mode(self.window_size.tolist(), pg.FULLSCREEN if self.config['fullscreen'] else 0)
         self.manager = UIManager(self.display.get_size(), theme_path=theme)
         self.right_click = RightClick(self, self.window_size.tolist())
-        self.setup_ui()
+        self.setup_ui(data)
         self.change_model()
 
         self.file_name = None
+        self.wait_predict = False
         self.debug_class_name = {}  # key is pos_name, vel is class_name
 
         self.pass_n = 0
@@ -335,7 +344,7 @@ class AutoInspection:
             self.res_textbox.update_text('res', text='NG', color=(255, 0, 0))
         self.update_status()
 
-    def panel0_setup(self):
+    def panel0_setup(self, data):
         is_full_hd = self.config['resolution'] == '1920x1080'
         # top left
         self.logo_button = UIButton(
@@ -406,9 +415,10 @@ class AutoInspection:
 
         # bottom left
         anchors = {'top': 'bottom', 'left': 'right', 'bottom': 'bottom', 'right': 'right'}
+        xfunction = f' x {data.get('xfunction')}' if data.get('xfunction') else ''
         self.autoinspection_button = UIButton(
             Rect(-150, -30, 150, 30) if is_full_hd else Rect(-150, -20, 150, 20),
-            f'Auto Inspection 0.2.2', self.manager,
+            f'Auto Inspection 0.2.2{xfunction}', self.manager,
             object_id=ObjectID(class_id='@auto_inspection_button', object_id='#buttom_bar'),
             anchors=anchors
         )
@@ -612,6 +622,10 @@ class AutoInspection:
             self.predict_button = UIButton(Rect(10, 10, 100, 70), 'Predict', container=self.panel2_up, anchors={
                 'left_target': self.adj_button
             })
+            self.capture_predict_button = UIButton(Rect(10, 10, 100, 70), 'Cap&Predict', container=self.panel2_up,
+                                                   anchors={
+                                                       'left_target': self.predict_button
+                                                   })
         else:
             self.capture_button = UIButton(Rect(6, 6, 60, 45), 'Capture', container=self.panel2_up, )
             self.auto_cap_button = UIButton(Rect(6, 0, 60, 15), 'Auto', container=self.panel2_up, anchors={
@@ -713,7 +727,10 @@ class AutoInspection:
     def panel2_update(self, events, data):
         def capture_button():
             self.auto_cap_button.set_text('Auto')
-            self.get_surface_form_url(self.config['url_image'])
+            if data['xfunction'] == 'robot':
+                self.get_surface_form_robot(data)
+            else:
+                self.get_surface_form_url(self.config['url_image'])
             self.reset_frame()
             self.set_name_for_debug()
 
@@ -735,6 +752,11 @@ class AutoInspection:
                 adj_button()
             if event == 'Predict':
                 self.predict()
+            if event == 'Capture&Predict':
+                capture_button()
+                self.predict_button.disable()
+                self.capture_predict_button.disable()
+                self.wait_predict = True
         data['events_from_web'] = []
 
         for event in events:
@@ -758,6 +780,11 @@ class AutoInspection:
                     adj_button()
                 if event.ui_element == self.predict_button:
                     self.predict()
+                if event.ui_element == self.capture_predict_button:
+                    capture_button()
+                    self.predict_button.disable()
+                    self.capture_predict_button.disable()
+                    self.wait_predict = True
             if event.type == UI_FILE_DIALOG_PATH_PICKED:
                 # from Load Image
                 if event.ui_object_id == '#open_img_other':
@@ -785,12 +812,27 @@ class AutoInspection:
         if self.auto_cap_button.text == 'Stop':
             self.get_surface_form_url(self.config['url_image'])
 
-    def setup_ui(self):
-        self.panel0_setup()
+    def setup_ui(self, data):
+        self.panel0_setup(data)
         self.panel1_setup()
         self.panel2_setup()
 
     def handle_events(self, data):
+        if data['xfunction'] == 'robot':
+            # data['robot capture'] is '', 'capture', 'capture ok'
+            if data['robot capture'] == 'capture ok':
+                data['robot capture'] = ''
+                self.np_img = data['robot capture image'].copy()
+                self.get_surface_form_np(self.np_img)
+
+                if self.wait_predict:
+                    self.wait_predict = False
+                    self.predict()
+
+                self.capture_button.enable()
+                self.predict_button.enable()
+                self.capture_predict_button.enable()
+
         events = pg.event.get()
         self.panel0_update(events)
         self.panel1_update(events)
@@ -825,7 +867,7 @@ class AutoInspection:
 
 
 def main(data={}):
-    app = AutoInspection()
+    app = AutoInspection(data)
     app.run(data)
 
 
