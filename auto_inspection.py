@@ -160,16 +160,18 @@ class AutoInspection:
 
     def __init__(self, data):
         self.config = json_load('config.json', default={
+            'ipv4_address': "",
+            'port': 2002,
             'device_note': 'PC, RP',
             'device': 'PC',
             'resolution_note': '1920x1080, 800x480',
             'resolution': '1920x1080',
             'model_name': '-',
             'fullscreen': True,
-            'url_image': 'http://192.168.225.137:2000/image?source=video_capture&id=0',
+            'url_image': 'http://192.168.137.200:2000/image?source=video_capture&id=0',
             'xfunction_note': 'robot',
             'xfunction': '',
-            'robot_url': 'http://192.168.137.200:5000',
+            'robot_url': 'http://192.168.137.200:2001',
         })
         json_update('config.json', self.config)
         if self.config['resolution'] == '1920x1080':
@@ -271,8 +273,8 @@ class AutoInspection:
                 model.update(json_load(fr'data/{self.model_name}/model/{name}.json'))
                 pprint(model)
                 if model['model_class_names'] != model['class_names']:
-                    print(f'{YELLOW}class_names       = {model['class_names']}')
-                    print(f'model_class_names = {model['model_class_names']}{ENDC}')
+                    print(f'{YELLOW}class_names       = {model["class_names"]}')
+                    print(f'model_class_names = {model["model_class_names"]}{ENDC}')
                 # except Exception as e:
                 #     print(f'{YELLOW}function "load_model" error.\n'
                 #           f'file error data/{self.model_name}/model/{name}.json{ENDC}')
@@ -415,7 +417,7 @@ class AutoInspection:
 
         # bottom left
         anchors = {'top': 'bottom', 'left': 'right', 'bottom': 'bottom', 'right': 'right'}
-        xfunction = f' x {data.get('xfunction')}' if data.get('xfunction') else ''
+        xfunction = f" x {data.get('xfunction')}" if data.get('xfunction') else ''
         self.autoinspection_button = UIButton(
             Rect(-150, -30, 150, 30) if is_full_hd else Rect(-150, -20, 150, 20),
             f'Auto Inspection 0.2.2{xfunction}', self.manager,
@@ -631,13 +633,16 @@ class AutoInspection:
             self.auto_cap_button = UIButton(Rect(6, 0, 60, 15), 'Auto', container=self.panel2_up, anchors={
                 'top_target': self.capture_button
             })
-            self.load_button = UIButton(Rect(0, 6, 49, 60), 'Load', container=self.panel2_up, anchors={
+            self.load_button = UIButton(Rect(0, 6, 49, 30), 'Load', container=self.panel2_up, anchors={
                 'left_target': self.capture_button
             })
-            self.adj_button = UIButton(Rect(0, 6, 79, 30), 'Adj Image', container=self.panel2_up, anchors={
-                'left_target': self.load_button
+            self.adj_button = UIButton(Rect(0, 36, 49, 30), 'Adj Image', container=self.panel2_up, anchors={
+                'left_target': self.capture_button
             })
-            self.predict_button = UIButton(Rect(0, 35, 79, 30), 'Predict', container=self.panel2_up, anchors={
+            self.predict_button = UIButton(Rect(0, 6, 79, 30), 'Predict', container=self.panel2_up, anchors={
+                'left_target': self.load_button,
+            })
+            self.capture_predict_button = UIButton(Rect(0, 35, 79, 30), 'Cap&Pre_', container=self.panel2_up, anchors={
                 'left_target': self.load_button,
             })
         self.file_dialog = None
@@ -727,7 +732,7 @@ class AutoInspection:
     def panel2_update(self, events, data):
         def capture_button():
             self.auto_cap_button.set_text('Auto')
-            if data['xfunction'] == 'robot':
+            if data.get('xfunction') == 'robot':
                 self.get_surface_form_robot(data)
             else:
                 self.get_surface_form_url(self.config['url_image'])
@@ -818,9 +823,9 @@ class AutoInspection:
         self.panel2_setup()
 
     def handle_events(self, data):
-        if data['xfunction'] == 'robot':
+        if data.get('xfunction') == 'robot':
             # data['robot capture'] is '', 'capture', 'capture ok'
-            if data['robot capture'] == 'capture ok':
+            if data.get('robot capture') == 'capture ok':
                 data['robot capture'] = ''
                 self.np_img = data['robot capture image'].copy()
                 self.get_surface_form_np(self.np_img)

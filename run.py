@@ -27,6 +27,9 @@ def robot_capture(data):
             print(f"Error sending {endpoint} request: {e}")
             return None
 
+    def home():
+        send_request("home", )
+
     def move_to(row):
         try:
             send_request("move_to", json={"row": row})
@@ -42,10 +45,16 @@ def robot_capture(data):
     if data.get('xfunction') == '':
         return
 
+    go_to_home = True
     while data['play']:
         time.sleep(0.1)
         # data['robot capture'] is '', 'capture', 'capture ok'
         if data['robot capture'] == 'capture':
+            if go_to_home:
+                go_to_home = False
+                home()
+                time.sleep(5)
+
             move_to(1)
             time.sleep(3)
             image1 = get_image()
@@ -126,10 +135,10 @@ if __name__ == '__main__':
     for k, v in json_load('config.json').items():
         data[k] = v
 
-    hostname = socket.gethostname()
-    ipv4_address = socket.gethostbyname(hostname)
-    data['ipv4_address'] = ipv4_address
-    data['port'] = 5555
+    if data['ipv4_address'] == '':
+        hostname = socket.gethostname()
+        ipv4_address = socket.gethostbyname(hostname)
+        data['ipv4_address'] = ipv4_address
     data['events_from_web'] = []
     data['play'] = True
     data['robot capture'] = ''  # is '', 'capture', 'capture ok'

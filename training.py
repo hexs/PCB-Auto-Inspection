@@ -5,7 +5,7 @@ import shutil
 import json
 import pathlib
 import matplotlib.pyplot as plt
-import tensorflow as tf
+import keras
 from keras import layers, models
 from keras.models import Sequential
 from datetime import datetime
@@ -88,8 +88,10 @@ def save_img(model_name, frame_dict):
             frame_path = os.path.join(IMG_FRAME_PATH, model_name, status)
             os.makedirs(frame_path, exist_ok=True)
 
-            for shift_y in [-4, -2, 0, 1, 4]:
-                for shift_x in [-4, -2, 0, 2, 4]:
+            shift = [-4, -2, 0, 1, 4]
+            # shift = [-4, 0, 4]
+            for shift_y in shift:
+                for shift_x in shift:
                     img_crop = crop_img(img, xywh, shift=(shift_x, shift_y))
 
                     for brightness in [230, 242, 255, 267, 280]:
@@ -106,7 +108,7 @@ def create_model(model_name):
     image_count = len(list(data_dir.glob('*/*.png')))
     print(f'image_count = {image_count}')
 
-    train_ds, val_ds = tf.keras.utils.image_dataset_from_directory(
+    train_ds, val_ds = keras.utils.image_dataset_from_directory(
         data_dir,
         validation_split=0.2,
         subset="both",
@@ -132,7 +134,7 @@ def create_model(model_name):
     plt.savefig(f'{MODEL_PATH}/{model_name}.png')
 
     # Configure the dataset for performance
-    AUTOTUNE = tf.data.AUTOTUNE
+    AUTOTUNE = -1
     train_ds = train_ds.cache().shuffle(1000).prefetch(buffer_size=AUTOTUNE)
     val_ds = val_ds.cache().prefetch(buffer_size=AUTOTUNE)
 
@@ -153,7 +155,7 @@ def create_model(model_name):
     ])
 
     model.compile(optimizer='adam',
-                  loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
+                  loss=keras.losses.SparseCategoricalCrossentropy(from_logits=True),
                   metrics=['accuracy'])
     model.summary()
     history = model.fit(train_ds, validation_data=val_ds, epochs=epochs)
