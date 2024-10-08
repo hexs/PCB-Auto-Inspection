@@ -1,5 +1,5 @@
 import os
-from manage_json_files import json_update
+from hexss import json_update
 
 
 def convert_txt_to_json(path: str):

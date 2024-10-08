@@ -16,7 +16,7 @@ from keras import models
 
 from constant import *
 from adj_image import adj_image
-from manage_json_files import json_load, json_update
+from hexss import json_load, json_update
 from theme import theme
 from training import crop_img
 from TextBoxSurface import TextBoxSurface, gradient_surface
@@ -391,7 +391,7 @@ class AutoInspection:
         # bottom left
         anchors = {'top': 'bottom', 'left': 'left', 'bottom': 'bottom', 'right': 'left'}
         self.fps_button = UIButton(
-            Rect(20, -30, 80, 30) if is_full_hd else Rect(20, -20, 80, 20),
+            Rect(0, -30, 80, 30) if is_full_hd else Rect(0, -20, 80, 20),
             '', self.manager,
             object_id=ObjectID(class_id='@fps_button', object_id='#buttom_bar'),
             anchors=anchors
@@ -418,9 +418,11 @@ class AutoInspection:
         # bottom left
         anchors = {'top': 'bottom', 'left': 'right', 'bottom': 'bottom', 'right': 'right'}
         xfunction = f" x {data.get('xfunction')}" if data.get('xfunction') else ''
+        test = f'Auto Inspection 0.2.2' + xfunction
+        w = (150 / 22 * len(test)) + 10
         self.autoinspection_button = UIButton(
-            Rect(-150, -30, 150, 30) if is_full_hd else Rect(-150, -20, 150, 20),
-            f'Auto Inspection 0.2.2{xfunction}', self.manager,
+            Rect(-w, -30, w, 30) if is_full_hd else Rect(-w, -20, w, 20),
+            test, self.manager,
             object_id=ObjectID(class_id='@auto_inspection_button', object_id='#buttom_bar'),
             anchors=anchors
         )
@@ -656,7 +658,7 @@ class AutoInspection:
         )
         self.res_textbox.add_text(
             'res', text='-', color=(0, 0, 0),
-            font_name='Rounded Mplus 1c Medium', font_size=130 if is_full_hd else 50
+            font_name='Arial', font_size=130 if is_full_hd else 50
         )
 
         self.passrate_textbox = TextBoxSurface(
@@ -668,43 +670,43 @@ class AutoInspection:
         self.passrate_textbox.add_text(
             'Pass_', 'Pass',
             (50, 10) if is_full_hd else (10, 5),
-            (0, 255, 0),
-            font_name='Rounded Mplus 1c Medium', font_size=40 if is_full_hd else 20,
+            (0, 200, 0),
+            font_name='Arial', font_size=40 if is_full_hd else 20,
             anchor='topleft'
         )
         self.passrate_textbox.add_text(
             'Pass', text=': 0',
             xy=(300, 10) if is_full_hd else (100, 5),
-            color=(0, 255, 0),
-            font_name='Rounded Mplus 1c Medium', font_size=40 if is_full_hd else 20,
+            color=(0, 200, 0),
+            font_name='Arial', font_size=40 if is_full_hd else 20,
             anchor='topleft'
         )
         self.passrate_textbox.add_text(
             'Fail_', text='Fail',
             xy=(50, 60) if self.config['resolution'] == '1920x1080' else (10, 30),
             color=(255, 0, 0),
-            font_name='Rounded Mplus 1c Medium', font_size=40 if is_full_hd else 20,
+            font_name='Arial', font_size=40 if is_full_hd else 20,
             anchor='topleft'
         )
         self.passrate_textbox.add_text(
             'Fail', text=': 0',
             xy=(300, 60) if is_full_hd else (100, 30),
             color=(255, 0, 0),
-            font_name='Rounded Mplus 1c Medium', font_size=40 if is_full_hd else 20,
+            font_name='Arial', font_size=40 if is_full_hd else 20,
             anchor='topleft'
         )
         self.passrate_textbox.add_text(
             'Pass rate_', text='Pass rate',
             xy=(50, 110) if is_full_hd else (10, 55),
             color=(0, 0, 0),
-            font_name='Rounded Mplus 1c Medium', font_size=40 if is_full_hd else 20,
+            font_name='Arial', font_size=40 if is_full_hd else 20,
             anchor='topleft'
         )
         self.passrate_textbox.add_text(
             'Pass rate', text=': -%',
             xy=(300, 110) if is_full_hd else (100, 55),
             color=(0, 0, 0),
-            font_name='Rounded Mplus 1c Medium', font_size=40 if is_full_hd else 20,
+            font_name='Arial', font_size=40 if is_full_hd else 20,
             anchor='topleft'
         )
 

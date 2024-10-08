@@ -7,7 +7,7 @@ theme.update({
             "normal_text": "#000",
         },
         "font": {
-            "name": "Rounded Mplus 1c Medium",
+            "name": "Arial",
             "size": "14"
         },
         "misc": {
@@ -16,7 +16,7 @@ theme.update({
     },
     "#model_label": {
         "font": {
-            "name": "Rounded Mplus 1c Medium",
+            "name": "Arial",
             "size": "18"
         },
     }
@@ -250,7 +250,7 @@ theme.update({
     },
     "passrate_textbox": {
         "font": {
-            "name": "Rounded Mplus 1c Medium",
+            "name": "Arial",
             "size": "50"
         },
     }
