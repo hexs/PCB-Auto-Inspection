@@ -1,5 +1,4 @@
 import os
-import urllib.request
 from datetime import datetime
 from pprint import pprint
 import numpy as np
@@ -17,6 +16,7 @@ from keras import models
 from constant import *
 from adj_image import adj_image
 from hexss import json_load, json_update
+from hexss.image import get_image
 from theme import theme
 from training import crop_img
 from TextBoxSurface import TextBoxSurface, gradient_surface
@@ -79,7 +79,7 @@ class RightClick:
 
 
 class AutoInspection:
-    IMG = np.full((2448, 3264, 3), [10, 100, 10], dtype=np.uint8)
+    IMG = np.full((2448, 3264, 3), [150, 150, 150], dtype=np.uint8)
 
     def update_scaled_img_surface(self):
         self.scaled_img_surface = pg.transform.scale(self.img_surface, (
@@ -99,13 +99,7 @@ class AutoInspection:
         self.capture_button.disable()
 
     def get_surface_form_url(self, url):
-        try:
-            req = urllib.request.urlopen(url)
-            arr = np.asarray(bytearray(req.read()), dtype=np.uint8)
-            self.np_img = cv2.imdecode(arr, -1)
-        except Exception as e:
-            print(f"Error loading image: {e}")
-            self.np_img = np.full((500, 500, 3), [0, 0, 230], dtype=np.uint8)  # Red image on error
+        self.np_img = get_image(url,'numpy')
         self.get_surface_form_np(self.np_img)
 
     def show_rects_to_surface(self, frame_dict, type='frame'):
@@ -159,22 +153,10 @@ class AutoInspection:
                             (220, 0, 190), (255, 255, 255), anchor='bottomleft')
 
     def __init__(self, data):
-        self.config = json_load('config.json', default={
-            'ipv4_address': "",
-            'port': 2002,
-            'device_note': 'PC, RP',
-            'device': 'PC',
-            'resolution_note': '1920x1080, 800x480',
-            'resolution': '1920x1080',
-            'model_name': '-',
-            'fullscreen': True,
-            'url_image': 'http://192.168.137.200:2000/image?source=video_capture&id=0',
-            'xfunction_note': 'robot',
-            'xfunction': '',
-            'robot_url': 'http://192.168.137.200:2001',
-        })
-        json_update('config.json', self.config)
-        if self.config['resolution'] == '1920x1080':
+        self.config = data['config']
+        self.xfunction = self.config.get('xfunction')
+        self.resolution = self.config.get('resolution')
+        if self.resolution == '1920x1080':
             self.window_size = np.array([1920, 1080])
         else:
             self.window_size = np.array([800, 480])
@@ -217,7 +199,7 @@ class AutoInspection:
         self.setup_NG_details()
 
     def setup_NG_details(self):
-        size_font = 25 if self.config['resolution'] == '1920x1080' else 13
+        size_font = 25 if self.resolution == '1920x1080' else 13
         formatted_text = ""
         for k, v in self.frame_dict.items() if self.frame_dict else ():
             if v.get('highest_score_name') in ['', 'OK']:
@@ -232,7 +214,7 @@ class AutoInspection:
         self.passrate_textbox.update_text('Fail', text=f': {self.fail_n}')
         self.passrate_textbox.update_text('Pass rate', text=
         f': {self.pass_n / (self.pass_n + self.fail_n) * 100:.2f}%' if self.pass_n or self.fail_n else ': -%')
-        # size_font = 32 if self.config['resolution'] == '1920x1080' else 20
+        # size_font = 32 if self.resolution == '1920x1080' else 20
         # pass_rate = f'{self.pass_n / (self.pass_n + self.fail_n) * 100:.2f}%' if self.pass_n or self.fail_n else '-'
         # self.passrate_textbox.set_text(
         #     f"<font color='#00CC00' size={size_font}>Pass        : {self.pass_n}</font><br>"
@@ -281,8 +263,8 @@ class AutoInspection:
                 #     print(PINK, e, ENDC, sep='')
 
             config = json_load(os.path.join('data', self.model_name, 'model_config.json'))
-            if config.get(self.config['resolution']):
-                for k, v in config[self.config['resolution']].items():
+            if config.get(self.resolution):
+                for k, v in config[self.resolution].items():
                     if k == 'scale_factor':
                         self.scale_factor = v
                     elif k == 'img_offset':
@@ -347,7 +329,7 @@ class AutoInspection:
         self.update_status()
 
     def panel0_setup(self, data):
-        is_full_hd = self.config['resolution'] == '1920x1080'
+        is_full_hd = self.resolution == '1920x1080'
         # top left
         self.logo_button = UIButton(
             Rect(5, 5, 30, 30) if is_full_hd else Rect(5, 5, 20, 20),
@@ -417,8 +399,7 @@ class AutoInspection:
 
         # bottom left
         anchors = {'top': 'bottom', 'left': 'right', 'bottom': 'bottom', 'right': 'right'}
-        xfunction = f" x {data.get('xfunction')}" if data.get('xfunction') else ''
-        test = f'Auto Inspection 0.2.2' + xfunction
+        test = f'Auto Inspection 0.2.2' + f" x {self.xfunction}" if self.xfunction else ''
         w = (150 / 22 * len(test)) + 10
         self.autoinspection_button = UIButton(
             Rect(-w, -30, w, 30) if is_full_hd else Rect(-w, -20, w, 20),
@@ -428,7 +409,7 @@ class AutoInspection:
         )
 
     def panel0_update(self, events):
-        is_full_hd = self.config['resolution'] == '1920x1080'
+        is_full_hd = self.resolution == '1920x1080'
         if is_full_hd:
             self.display.blit(gradient_surface(Rect(0, 0, 720, 40), (150, 200, 255), (255, 250, 230)), (0, 0))
             self.display.blit(gradient_surface(Rect(0, 0, 1200, 40), (255, 250, 230), (211, 229, 250)), (720, 0))
@@ -507,7 +488,7 @@ class AutoInspection:
                     if self.model_name != '-':
                         if event.text == 'save config':
                             json_update(os.path.join('data', self.model_name, 'model_config.json'), {
-                                f"{self.config['resolution']}": {
+                                f"{self.resolution}": {
                                     "scale_factor": self.scale_factor,
                                     "img_offset": self.img_offset.tolist()
                                 }
@@ -521,13 +502,13 @@ class AutoInspection:
                 if event.ui_object_id == '#RightClick.on_panel_1':
                     if event.text == 'zoom to fit':
                         data = json_load(os.path.join('data', self.model_name, 'model_config.json'), {
-                            f"{self.config['resolution']}": {
+                            f"{self.resolution}": {
                                 "scale_factor": 1,
                                 "img_offset": [0, 0]
                             }
                         })
-                        self.scale_factor = data[self.config['resolution']]['scale_factor']
-                        self.img_offset = np.array(data[self.config['resolution']]['img_offset'])
+                        self.scale_factor = data[self.resolution]['scale_factor']
+                        self.img_offset = np.array(data[self.resolution]['img_offset'])
 
                     if 'add data ' in event.text:
                         pos_name, class_name = event.text.split('add data ')[1].split('->')
@@ -551,7 +532,7 @@ class AutoInspection:
         self.file_name_button.set_text(f'{self.file_name}')
 
     def panel1_setup(self):
-        is_full_hd = self.config['resolution'] == '1920x1080'
+        is_full_hd = self.resolution == '1920x1080'
         self.panel1_rect = Rect(0, 40, 1347, 1010) if is_full_hd else Rect(0, 30, 600, 430)
         self.panel1_surface = Surface(self.panel1_rect.size)
 
@@ -605,7 +586,7 @@ class AutoInspection:
                                  ((self.panel1_rect.size - self.img_size_vector) / 2 + self.img_offset).tolist())
 
     def panel2_setup(self):
-        is_full_hd = self.config['resolution'] == '1920x1080'
+        is_full_hd = self.resolution == '1920x1080'
         self.panel2_up_rect = Rect(1347, 40, 573, 90) if is_full_hd else Rect(600, 30, 200, 72)
         self.panel2_up = UIPanel(self.panel2_up_rect, manager=self.manager)
 
@@ -683,7 +664,7 @@ class AutoInspection:
         )
         self.passrate_textbox.add_text(
             'Fail_', text='Fail',
-            xy=(50, 60) if self.config['resolution'] == '1920x1080' else (10, 30),
+            xy=(50, 60) if self.resolution == '1920x1080' else (10, 30),
             color=(255, 0, 0),
             font_name='Arial', font_size=40 if is_full_hd else 20,
             anchor='topleft'
@@ -710,7 +691,7 @@ class AutoInspection:
             anchor='topleft'
         )
 
-        # size_font = 32 if self.config['resolution'] == '1920x1080' else 20
+        # size_font = 32 if self.resolution == '1920x1080' else 20
         # self.passrate_textbox = UITextBox(
         #     html_text=(
         #         f"<font color='#00CC00' size={size_font}>Pass        : 0</font><br>"
@@ -734,7 +715,7 @@ class AutoInspection:
     def panel2_update(self, events, data):
         def capture_button():
             self.auto_cap_button.set_text('Auto')
-            if data.get('xfunction') == 'robot':
+            if self.xfunction == 'robot':
                 self.get_surface_form_robot(data)
             else:
                 self.get_surface_form_url(self.config['url_image'])
@@ -748,7 +729,7 @@ class AutoInspection:
             self.np_img = adj_image(self.np_img, self.model_name, self.mark_dict)
             self.reset_frame()
 
-        is_full_hd = self.config['resolution'] == '1920x1080'
+        is_full_hd = self.resolution == '1920x1080'
 
         for event in data.get('events_from_web') or []:
             if event == 'Capture':
@@ -825,7 +806,7 @@ class AutoInspection:
         self.panel2_setup()
 
     def handle_events(self, data):
-        if data.get('xfunction') == 'robot':
+        if self.xfunction == 'robot':
             # data['robot capture'] is '', 'capture', 'capture ok'
             if data.get('robot capture') == 'capture ok':
                 data['robot capture'] = ''
@@ -873,10 +854,6 @@ class AutoInspection:
         data['play'] = False
 
 
-def main(data={}):
+def main(data):
     app = AutoInspection(data)
     app.run(data)
-
-
-if __name__ == "__main__":
-    main()

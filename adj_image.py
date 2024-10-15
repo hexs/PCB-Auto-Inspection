@@ -126,6 +126,7 @@ def adj_image(image, model_name, mark_dict):
         xy2_ = (xy2 * [w, h])
         m1_xy_ = (m1_xy * [w, h])
         m2_xy_ = (m2_xy * [w, h])
+        center_for_rotate = (m1_xy_ + m2_xy_) // 2
 
         default_phi = np.degrees(np.arctan2((xy2_[1] - xy1_[1]), (xy2_[0] - xy1_[0])))
         phi = np.degrees(np.arctan2((m2_xy_[1] - m1_xy_[1]), (m2_xy_[0] - m1_xy_[0])))
@@ -139,6 +140,7 @@ def adj_image(image, model_name, mark_dict):
         print('default_phi', default_phi)
         print('phi', phi)
         image_ro = rotate(image, (phi - default_phi), center=np.array(intersection))
+        # image_ro = rotate(image, (phi - default_phi), center=np.array(center_for_rotate))
 
         return image_ro
 

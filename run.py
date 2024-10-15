@@ -1,12 +1,10 @@
 from hexss import json_load, json_update
+from hexss.image import get_image_from_url
 from flask import Flask, render_template, request
 import logging
-import multiprocessing
 import socket
-import urllib.request
 import requests
 import numpy as np
-import cv2
 import time
 
 # Configure logging
@@ -31,20 +29,10 @@ def index():
 
 def run_server(data):
     app.config['data'] = data
-    ipv4_address = data['ipv4_address']
-    port = data['port']
-    logger.info(f" * Running on http://{ipv4_address}:{port}")
-    app.run(host=ipv4_address, port=port, debug=False, use_reloader=False)
-
-
-def get_image(url):
-    try:
-        with urllib.request.urlopen(url) as req:
-            arr = np.asarray(bytearray(req.read()), dtype=np.uint8)
-        return cv2.imdecode(arr, -1)
-    except Exception as e:
-        logger.error(f"Error getting image: {e}")
-        return None
+    ipv4 = data['config']['ipv4']
+    port = data['config']['port']
+    logger.info(f" * Running on http://{ipv4}:{port}")
+    app.run(host=ipv4, port=port, debug=False, use_reloader=False)
 
 
 def send_request(robot_url, endpoint, method='post', **kwargs):
@@ -62,7 +50,7 @@ def robot_capture(data):
     def move_and_capture(row):
         send_request(data['robot_url'], "move_to", json={"row": row})
         time.sleep(2)
-        return get_image(data['url_image'])
+        return get_image_from_url(data['url_image'])
 
     if not data.get('xfunction'):
         return
@@ -103,43 +91,41 @@ def robot_capture(data):
             data['robot capture'] = 'capture ok'
 
 
-def main():
-    import auto_inspection
-
-    multiprocessing.freeze_support()
-    manager = multiprocessing.Manager()
-    data = manager.dict()
-
-    config = json_load('config.json')
-    data.update(config)
-
-    if not data['ipv4_address']:
-        data['ipv4_address'] = socket.gethostbyname(socket.gethostname())
-
-    data['events_from_web'] = []
-    data['play'] = True
-    data['robot capture'] = ''
-    data['robot capture image'] = None
-
-    processes = [
-        multiprocessing.Process(target=auto_inspection.main, args=(data,)),
-        multiprocessing.Process(target=run_server, args=(data,)),
-        multiprocessing.Process(target=robot_capture, args=(data,))
-    ]
-
-    for process in processes:
-        process.start()
-
-    try:
-        for process in processes:
-            process.join()
-    except KeyboardInterrupt:
-        logger.info("Keyboard interrupt received. Terminating processes.")
-        for process in processes:
-            process.terminate()
-        for process in processes:
-            process.join()
-
-
 if __name__ == '__main__':
-    main()
+    import auto_inspection
+    from hexss.multiprocessing import Multicore
+
+    config = json_load('config.json', default={
+        'ipv4': 'auto',
+        'port': 2002,
+        'device_note': 'PC, RP',
+        'device': 'PC',
+        'resolution_note': '1920x1080, 800x480',
+        'resolution': '1920x1080',
+        'model_name': '-',
+        'fullscreen': True,
+        'url_image': 'http://192.168.137.200:2000/image?source=video_capture&id=0',
+        'xfunction_note': 'robot',
+        'xfunction': '',
+        'robot_url': 'http://192.168.137.200:2001',
+    })
+    json_update('config.json', config)
+
+    m = Multicore()
+    m.set_data({
+        'config': config,
+        'events_from_web': [],
+        'play': True,
+        'robot capture': '',
+        'robot capture image': None,
+    })
+
+    if m.data['config']['ipv4'] == 'auto':
+        m.data['config']['ipv4'] = socket.gethostbyname(socket.gethostname())
+
+    m.add_func(auto_inspection.main)
+    m.add_func(run_server)
+    m.add_func(robot_capture)
+
+    m.start()
+    m.join()
