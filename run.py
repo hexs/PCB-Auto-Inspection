@@ -93,6 +93,7 @@ def robot_capture(data):
 
 if __name__ == '__main__':
     import auto_inspection
+    import hexss
     from hexss.multiprocessing import Multicore
 
     config = json_load('config.json', default={
@@ -124,8 +125,10 @@ if __name__ == '__main__':
         m.data['config']['ipv4'] = socket.gethostbyname(socket.gethostname())
 
     m.add_func(auto_inspection.main)
-    m.add_func(run_server)
+    m.add_func(run_server, join=False)
     m.add_func(robot_capture)
 
     m.start()
     m.join()
+
+    hexss.kill()
