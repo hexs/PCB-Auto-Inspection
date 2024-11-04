@@ -93,11 +93,10 @@ def robot_capture(data):
 
 if __name__ == '__main__':
     import auto_inspection
-    import hexss
-    from hexss.multiprocessing import Multicore
+    from hexss.threading import Multithread
 
     config = json_load('config.json', default={
-        'ipv4': 'auto',
+        'ipv4': socket.gethostbyname(socket.gethostname()),
         'port': 2002,
         'device_note': 'PC, RP',
         'device': 'PC',
@@ -112,23 +111,18 @@ if __name__ == '__main__':
     })
     json_update('config.json', config)
 
-    m = Multicore()
-    m.set_data({
+    m = Multithread()
+    data = {
         'config': config,
         'events_from_web': [],
         'play': True,
         'robot capture': '',
         'robot capture image': None,
-    })
+    }
 
-    if m.data['config']['ipv4'] == 'auto':
-        m.data['config']['ipv4'] = socket.gethostbyname(socket.gethostname())
-
-    m.add_func(auto_inspection.main)
-    m.add_func(run_server, join=False)
-    m.add_func(robot_capture)
+    m.add_func(auto_inspection.main, args=(data,))
+    m.add_func(run_server, args=(data,), join=False)
+    m.add_func(robot_capture, args=(data,))
 
     m.start()
     m.join()
-
-    hexss.kill()

@@ -93,9 +93,9 @@ class AutoInspection:
         self.img_surface = pg.image.frombuffer(np_img.tobytes(), np_img.shape[1::-1], "BGR")
         self.update_scaled_img_surface()
 
-    def get_surface_form_robot(self, data):
+    def get_surface_form_robot(self):
         # data['robot capture'] is '', 'capture', 'capture ok'
-        data['robot capture'] = 'capture'
+        self.data['robot capture'] = 'capture'
         self.capture_button.disable()
 
     def get_surface_form_url(self, url):
@@ -153,6 +153,7 @@ class AutoInspection:
                             (220, 0, 190), (255, 255, 255), anchor='bottomleft')
 
     def __init__(self, data):
+        self.data = data
         self.config = data['config']
         self.xfunction = self.config.get('xfunction')
         self.resolution = self.config.get('resolution')
@@ -712,11 +713,11 @@ class AutoInspection:
             container=self.panel2
         )
 
-    def panel2_update(self, events, data):
+    def panel2_update(self, events):
         def capture_button():
             self.auto_cap_button.set_text('Auto')
             if self.xfunction == 'robot':
-                self.get_surface_form_robot(data)
+                self.get_surface_form_robot()
             else:
                 self.get_surface_form_url(self.config['url_image'])
             self.reset_frame()
@@ -731,7 +732,7 @@ class AutoInspection:
 
         is_full_hd = self.resolution == '1920x1080'
 
-        for event in data.get('events_from_web') or []:
+        for event in self.data.get('events_from_web') or []:
             if event == 'Capture':
                 capture_button()
             if event == 'Auto':
@@ -745,7 +746,7 @@ class AutoInspection:
                 self.predict_button.disable()
                 self.capture_predict_button.disable()
                 self.wait_predict = True
-        data['events_from_web'] = []
+        self.data['events_from_web'] = []
 
         for event in events:
             if event.type == UI_BUTTON_PRESSED:
@@ -805,12 +806,12 @@ class AutoInspection:
         self.panel1_setup()
         self.panel2_setup()
 
-    def handle_events(self, data):
+    def handle_events(self):
         if self.xfunction == 'robot':
             # data['robot capture'] is '', 'capture', 'capture ok'
-            if data.get('robot capture') == 'capture ok':
-                data['robot capture'] = ''
-                self.np_img = data['robot capture image'].copy()
+            if self.data.get('robot capture') == 'capture ok':
+                self.data['robot capture'] = ''
+                self.np_img = self.data['robot capture image'].copy()
                 self.get_surface_form_np(self.np_img)
 
                 if self.wait_predict:
@@ -824,7 +825,7 @@ class AutoInspection:
         events = pg.event.get()
         self.panel0_update(events)
         self.panel1_update(events)
-        self.panel2_update(events, data)
+        self.panel2_update(events)
         for event in events:
             self.manager.process_events(event)
             # if event.type != 1024:
@@ -836,13 +837,13 @@ class AutoInspection:
 
         self.right_click.events(events)
 
-    def run(self, data):
+    def run(self):
         while self.is_running:
             time_delta = self.clock.tick(60) / 1000.0
             self.display.fill((220, 220, 220))
             self.get_surface_form_np(self.np_img)
 
-            self.handle_events(data)
+            self.handle_events()
 
             self.display.blit(self.panel1_surface, self.panel1_rect.topleft)
 
@@ -851,9 +852,9 @@ class AutoInspection:
 
             pg.display.update()
 
-        data['play'] = False
+        self.data['play'] = False
 
 
 def main(data):
     app = AutoInspection(data)
-    app.run(data)
+    app.run()
