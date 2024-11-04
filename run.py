@@ -1,4 +1,4 @@
-from hexss import json_load, json_update
+from hexss import json_load, json_update, is_port_available, close_port
 from hexss.image import get_image_from_url
 from flask import Flask, render_template, request
 import logging
@@ -110,6 +110,10 @@ if __name__ == '__main__':
         'robot_url': 'http://192.168.137.200:2001',
     })
     json_update('config.json', config)
+
+    # check port
+    if not is_port_available(config['ipv4'], config['port']):
+        close_port(config['ipv4'], config['port'])
 
     m = Multithread()
     data = {
