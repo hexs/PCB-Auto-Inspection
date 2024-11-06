@@ -46,14 +46,20 @@ def send_request(robot_url, endpoint, method='post', **kwargs):
         return None
 
 
-def robot_capture(data):
+def robot_capture(data: dict):
+    '''
+    for auto inspection x robot only
+
+    :param data: dict data
+    :return: None
+    '''
+    if data.get('xfunction') != "robot":
+        return
+
     def move_and_capture(row):
         send_request(data['robot_url'], "move_to", json={"row": row})
         time.sleep(2)
         return get_image_from_url(data['url_image'])
-
-    if not data.get('xfunction'):
-        return
 
     while data['play']:
         time.sleep(0.1)
